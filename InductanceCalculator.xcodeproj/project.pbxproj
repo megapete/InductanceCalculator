@@ -10,6 +10,11 @@
 		D3E0F6AE1C3012A400C67699 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */; };
 		D3E0F6B01C3012A400C67699 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3E0F6AF1C3012A400C67699 /* Assets.xcassets */; };
 		D3E0F6B31C3012A400C67699 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D3E0F6B11C3012A400C67699 /* MainMenu.xib */; };
+		D3E0F6BB1C30145C00C67699 /* PCH_Defs.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6BA1C30145C00C67699 /* PCH_Defs.swift */; };
+		D3E0F6BD1C30149600C67699 /* GlobalDefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6BC1C30149600C67699 /* GlobalDefs.swift */; };
+		D3E0F6BF1C30163700C67699 /* PCH_DiskSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6BE1C30163700C67699 /* PCH_DiskSection.swift */; };
+		D3E0F6C41C301E7D00C67699 /* libgsl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E0F6C31C301E7D00C67699 /* libgsl.a */; };
+		D3E0F6C81C3021B500C67699 /* PCH_BlueBookFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6C71C3021B500C67699 /* PCH_BlueBookFunctions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +23,12 @@
 		D3E0F6AF1C3012A400C67699 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D3E0F6B21C3012A400C67699 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		D3E0F6B41C3012A400C67699 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D3E0F6BA1C30145C00C67699 /* PCH_Defs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_Defs.swift; sourceTree = "<group>"; };
+		D3E0F6BC1C30149600C67699 /* GlobalDefs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobalDefs.swift; sourceTree = "<group>"; };
+		D3E0F6BE1C30163700C67699 /* PCH_DiskSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_DiskSection.swift; sourceTree = "<group>"; };
+		D3E0F6C01C301E2100C67699 /* InductanceCalculator-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "InductanceCalculator-Bridging-Header.h"; sourceTree = "<group>"; };
+		D3E0F6C31C301E7D00C67699 /* libgsl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgsl.a; path = ../GNU_Scientific_Library/lib/libgsl.a; sourceTree = "<group>"; };
+		D3E0F6C71C3021B500C67699 /* PCH_BlueBookFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_BlueBookFunctions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,6 +36,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3E0F6C41C301E7D00C67699 /* libgsl.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -34,6 +46,7 @@
 		D3E0F6A11C3012A300C67699 = {
 			isa = PBXGroup;
 			children = (
+				D3E0F6C31C301E7D00C67699 /* libgsl.a */,
 				D3E0F6AC1C3012A300C67699 /* InductanceCalculator */,
 				D3E0F6AB1C3012A300C67699 /* Products */,
 			);
@@ -50,10 +63,15 @@
 		D3E0F6AC1C3012A300C67699 /* InductanceCalculator */ = {
 			isa = PBXGroup;
 			children = (
+				D3E0F6BA1C30145C00C67699 /* PCH_Defs.swift */,
+				D3E0F6BC1C30149600C67699 /* GlobalDefs.swift */,
+				D3E0F6C71C3021B500C67699 /* PCH_BlueBookFunctions.swift */,
 				D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */,
+				D3E0F6BE1C30163700C67699 /* PCH_DiskSection.swift */,
 				D3E0F6AF1C3012A400C67699 /* Assets.xcassets */,
 				D3E0F6B11C3012A400C67699 /* MainMenu.xib */,
 				D3E0F6B41C3012A400C67699 /* Info.plist */,
+				D3E0F6C01C301E2100C67699 /* InductanceCalculator-Bridging-Header.h */,
 			);
 			path = InductanceCalculator;
 			sourceTree = "<group>";
@@ -129,6 +147,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				D3E0F6AE1C3012A400C67699 /* AppDelegate.swift in Sources */,
+				D3E0F6BD1C30149600C67699 /* GlobalDefs.swift in Sources */,
+				D3E0F6C81C3021B500C67699 /* PCH_BlueBookFunctions.swift in Sources */,
+				D3E0F6BF1C30163700C67699 /* PCH_DiskSection.swift in Sources */,
+				D3E0F6BB1C30145C00C67699 /* PCH_Defs.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,11 +252,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../GNU_Scientific_Library/include\"";
 				INFOPLIST_FILE = InductanceCalculator/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../GNU_Scientific_Library/lib\"";
+				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.huberis-tech.InductanceCalculator";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "InductanceCalculator/InductanceCalculator-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
@@ -242,11 +270,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../GNU_Scientific_Library/include\"";
 				INFOPLIST_FILE = InductanceCalculator/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../GNU_Scientific_Library/lib\"";
+				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.huberis-tech.InductanceCalculator";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "InductanceCalculator/InductanceCalculator-Bridging-Header.h";
 			};
 			name = Release;
 		};

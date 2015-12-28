@@ -61,6 +61,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lkInd = L1 + L2 - 2.0 * M12
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
+        
+        
+        // Interesting stuff starts here
+        // Create the special section for ground. In SPICE, this always has the ID of '0'
+        let ground = PCH_SectionData(sectionID: "0")
+        
+        // Job016 HV data
+        let capFirstDisk = 1.4923E-9
+        let capOtherDisks = 1.6185E-9
+        let capToShield = 6.5814E-12
+        let capToTank = 1.0259E-22
+        let resPerDisk = 0.19727
+        let numDisks = 60
+         
+        
     }
 
     func applicationWillTerminate(aNotification: NSNotification) {

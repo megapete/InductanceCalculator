@@ -28,6 +28,9 @@ class PCH_DiskSection {
     /// A factor for "fudging" some calculations. The BlueBook says that a factor of three gives better results, but so far, my tests show that a factor closer to 1 is better (closer to Andersen) so that's what I'm using (for now).
     let windHtFactor = 1.0
     
+    /// The electrical data associated with the section
+    var data:PCH_SectionData
+    
     /**
         Designated initializer
         
@@ -37,13 +40,14 @@ class PCH_DiskSection {
         - parameter coreRadius: The core radius
 
     */
-    init(diskRect:NSRect, N:Double, J:Double, windHt:Double, coreRadius:Double)
+    init(diskRect:NSRect, N:Double, J:Double, windHt:Double, coreRadius:Double, secData:PCH_SectionData)
     {
         self.diskRect = diskRect
         self.N = N
         self.J = J
         self.windHt = windHt
         self.coreRadius = coreRadius
+        self.data = secData
     }
     
     /// BlueBook function J0

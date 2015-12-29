@@ -28,6 +28,9 @@ struct PCH_SectionData {
     /// The mutual inductances to all other sections, in H. The keys are the sectionID's of the other sections.
     var mutualInductances = [String:Double]()
     
+    /// The mutual inductances as coefficients k = M12 / sqrt(L1 * L2). The keys are the sectionID's of the other sections.
+    var mutIndCoeff = [String:Double]()
+    
     init(sectionID:String)
     {
         self.sectionID = sectionID

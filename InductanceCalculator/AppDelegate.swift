@@ -17,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
         
+        /*
         var lvRect = NSMakeRect(19.72 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
         var hvRect = NSMakeRect(25.639 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
         
@@ -61,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lkInd = L1 + L2 - 2.0 * M12
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-        
+        */
         
         // Interesting stuff starts here
         // Create the special section for ground. In SPICE, this always has the ID of '0'
@@ -87,9 +88,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         var hvCoil = [PCH_DiskSection]()
         
-        for _ in 1...Int(hv_numDisks)
+        for i in 1...Int(hv_numDisks)
         {
-            hvCoil.append(PCH_DiskSection(diskRect: hv_diskRect, N: hv_turnsPerDisk, J: hv_J, windHt: windowHt, coreRadius: coreRadius))
+            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", hv_ID, i))
+            nextSectionData.resistance = hv_resPerDisk
+            nextSectionData.seriesCapacitance = (i==1 ? hv_capFirstDisk : hv_capOtherDisks)
+            nextSectionData.shuntCapacitances["0"] = hv_capToShield + hv_capToTank
+            
+            hvCoil.append(PCH_DiskSection(diskRect: hv_diskRect, N: hv_turnsPerDisk, J: hv_J, windHt: windowHt, coreRadius: coreRadius, secData: nextSectionData))
             hv_diskRect = hv_diskRect.offsetBy(dx: 0.0, dy:CGFloat(-hv_diskPitch))
         }
         
@@ -109,14 +115,169 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         var lvCoil = [PCH_DiskSection]()
         
-        for _ in 1...Int(lv_numDisks)
+        for i in 1...Int(lv_numDisks)
         {
-            lvCoil.append(PCH_DiskSection(diskRect: lv_diskRect, N: lv_turnsPerDisk, J: lv_J, windHt: windowHt, coreRadius: coreRadius))
+            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", lv_ID, i))
+            nextSectionData.resistance = lv_resPerDisk
+            nextSectionData.seriesCapacitance = (i==1 ? lv_capFirstDisk : lv_capOtherDisks)
+            nextSectionData.shuntCapacitances["0"] = lv_capToShield + lv_capToCore
+            
+            lvCoil.append(PCH_DiskSection(diskRect: lv_diskRect, N: lv_turnsPerDisk, J: lv_J, windHt: windowHt, coreRadius: coreRadius, secData: nextSectionData))
             lv_diskRect = lv_diskRect.offsetBy(dx: 0.0, dy:CGFloat(-lv_diskPitch))
         }
         
-    }
+        // At this point, our two arrays hold all the disks from the two windings. Now we need to calculate self- and mutual-inductances. We start by combining the arrays into one big one
+        var coilArray = hvCoil + lvCoil
+        
+        for nextDisk in coilArray
+        {
+            nextDisk.data.selfInductance = nextDisk.SelfInductance()
+        }
+        
+        while coilArray.count > 0
+        {
+            let nDisk = coilArray.removeAtIndex(0)
+            
+            for otherDisk in coilArray
+            {
+                let mutInd = fabs(nDisk.MutualInductanceTo(otherDisk))
+                
+                let mutIndCoeff = mutInd / sqrt(nDisk.data.selfInductance * otherDisk.data.selfInductance)
+                if (mutIndCoeff < 0.0 || mutIndCoeff > 1.0)
+                {
+                    DLog("Fuck, fuck, fuck!")
+                }
+                
+                nDisk.data.mutualInductances[otherDisk.data.sectionID] = mutInd
+                otherDisk.data.mutualInductances[nDisk.data.sectionID] = mutInd
+                
+                nDisk.data.mutIndCoeff[otherDisk.data.sectionID] = mutIndCoeff
+                otherDisk.data.mutIndCoeff[nDisk.data.sectionID] = mutIndCoeff
+                
+            }
+        }
+        
+        // We now have all the electrical data calculated and stored for our disks. We can finally create the SPICE input file. The node numbering and component numbering is as follows, where for a section ID of XXYYY:
+        //  Input node: XXIYYY (Output Node: XXI(YYY+1)
+        //  Middle mdoe: XXMYYY
+        //  Resistance: RXXYYY
+        //  Self-inductance: LXXYYY
+        //  Series capacitance: CSXXYYY
+        //  Shunt capacitances: CPXXYYYNNN (where NNN is a serial number from 0 to 999)
+        //  Mutual-inductance: KNNNNN (where NNNNN is a serial number from 0 to 99999)
+        
+        //  Special nodes are connected to the top and bottom leads using a low-value resistor as follows:
+        //  RXXTOP XXTOP XXI001 1.0E-9
+        //  RXXBOT XXBOT XXIZZZ 1.0E-9 (where ZZZ is the bottommost disk + 1)
+        
+        // We need an array to keep track of which elements we've already written to the file (to avoid multiple instances of identical mutual inductances and shunt capacitances)
+        var doneSections = [String]()
+        
+        // The string that will be used to create the SPICE input file
+        var fileString = String()
+        
+        // The mutual inductance serial number
+        var mutIndSerialNum = 0
+        
+        coilArray = hvCoil + lvCoil
+        for nextDisk in coilArray
+        {
+            // Separate the disk ID into the coil name and the disk number
+            let nextSectionID = nextDisk.data.sectionID
+            doneSections.append(nextSectionID)
+            
+            let coilName = nextSectionID[nextSectionID.startIndex.advancedBy(0)...nextSectionID.startIndex.advancedBy(1)]
+            let diskNum = nextSectionID[nextSectionID.startIndex.advancedBy(2)..<nextSectionID.endIndex]
+            let nextDiskNum = String(format: "%03d", Int(diskNum)! + 1)
+            
+            let inNode = coilName + "I" + diskNum
+            let outNode = coilName + "I" + nextDiskNum
+            let midNode = coilName + "M" + diskNum
+            let resName = "R" + nextSectionID
+            let selfIndName = "L" + nextSectionID
+            let seriesCapName = "CS" + nextSectionID
+            
+            fileString += String(format: "* Definitions for disk: %@\n", nextSectionID)
+            fileString += selfIndName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance)
+            fileString += resName + " " + midNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.resistance)
+            fileString += seriesCapName + " " + inNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.seriesCapacitance)
+            
+            var shuntCapSerialNum = 0
+            for nextShuntCap in nextDisk.data.shuntCapacitances
+            {
+                let nsName = String(format: "CP%@%03d", nextSectionID, shuntCapSerialNum)
+                
+                let shuntID = nextShuntCap.0
+                
+                // make sure that this capacitance is not already done
+                if doneSections.contains(shuntID)
+                {
+                    continue
+                }
+            
+                var shuntNode = String()
+                if (shuntID == "0")
+                {
+                    shuntNode = "0"
+                }
+                else
+                {
+                    shuntNode = shuntID[shuntID.startIndex.advancedBy(0)...shuntID.startIndex.advancedBy(1)]
+                    shuntNode += "I"
+                    shuntNode += shuntID[shuntID.startIndex.advancedBy(2)...shuntID.endIndex]
+                }
+                
+                fileString += nsName + " " + inNode + " " + shuntNode + String(format: " %.4E\n", nextShuntCap.1)
+                
+                shuntCapSerialNum++
+            }
+            
+            for nextMutualInd in nextDisk.data.mutIndCoeff
+            {
+                let miName = String(format: "K%05d", mutIndSerialNum)
+                
+                let miID = nextMutualInd.0
+                
+                if (doneSections.contains(miID))
+                {
+                    continue
+                }
+                
+                fileString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
+                
+                mutIndSerialNum++
+            }
+        }
+        
+        // We connect the coil ends to their nodes
+        fileString += "* Coil ends\n"
+        fileString += "R" + hv_ID + "TOP " + hv_ID + "TOP " + hv_ID + "I001 1.0E-9\n"
+        fileString += "R" + lv_ID + "TOP " + lv_ID + "TOP " + lv_ID + "I001 1.0E-9\n"
+        
+        fileString += "R" + hv_ID + "BOT " + hv_ID + "BOT " + hv_ID + String(format: "I%03d 1.0E-9\n", hvCoil.count + 1)
+        fileString += "R" + lv_ID + "BOT " + lv_ID + "BOT " + lv_ID + String(format: "I%03d 1.0E-9\n", lvCoil.count + 1)
+        
+        /*
+        NSString *documentsDirectory;
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        if ([paths count] > 0) {
+            documentsDirectory = [paths objectAtIndex:0];
+        }
+*/
+        let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+        ZAssert(paths.count > 0, message: "Could not find Documents directory!")
+        
+        let filename = paths[0] + "/J016_Spicefile.cir"
+        
+        do {
+            try fileString.writeToFile(filename, atomically: true, encoding: NSUTF8StringEncoding)
+        }
+        catch {
+            ALog("Could not write file!")
+        }
 
+    }
+    
     func applicationWillTerminate(aNotification: NSNotification) {
         // Insert code here to tear down your application
     }

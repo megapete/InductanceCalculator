@@ -26,7 +26,7 @@ class PCH_DiskSection {
     let diskRect:NSRect
     
     /// A factor for "fudging" some calculations. The BlueBook says that a factor of three gives better results, but so far, my tests show that a factor closer to 1 is better (closer to Andersen) so that's what I'm using (for now).
-    let windHtFactor = 1.0
+    let windHtFactor = 3.0
     
     /// The electrical data associated with the section
     var data:PCH_SectionData
@@ -85,7 +85,10 @@ class PCH_DiskSection {
         let useWindht = windHtFactor * self.windHt
         let xc = (Double(n) * π / useWindht) * self.coreRadius
         
-        return gsl_sf_bessel_I0(xc) / gsl_sf_bessel_K0(xc) * self.C(n)
+        let I0 = gsl_sf_bessel_I0(xc)
+        let K0 = gsl_sf_bessel_K0(xc)
+        
+        return I0 / K0 * self.C(n)
     }
     
     /// BlueBook function En
@@ -120,7 +123,7 @@ class PCH_DiskSection {
         let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
         let xc = m * self.coreRadius
         
-        return gsl_sf_bessel_I0(xc) / gsl_sf_bessel_K0(xc) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from(x1, toB: x2)
+        return gsl_sf_bessel_I0(xc) / gsl_sf_bessel_K0(xc) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
     }
     
     /// Rabins' method for calculating self-inductance
@@ -133,13 +136,13 @@ class PCH_DiskSection {
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
         
-        let firstTerm = (π * µ0 * N1 * N1 / (6.0 * 1.0 * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
+        let firstTerm = (π * µ0 * N1 * N1 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         
-        let epsilon = 1.0E-8; // this will decide when we stop the summation
+        let epsilon = 1.0E-10; // this will decide when we stop the summation
         
         var lastValue = -1.0;
         var currentValue = firstTerm;
-        let multiplier = π * µ0 * 1.0 * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
+        let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
         if (fabs((lastValue-currentValue) / lastValue) < epsilon)
         {
@@ -151,7 +154,7 @@ class PCH_DiskSection {
         {
             lastValue = currentValue;
             
-            let m = Double(n) * π / (1.0 * self.windHt)
+            let m = Double(n) * π / (windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
@@ -174,6 +177,8 @@ class PCH_DiskSection {
         let N1 = self.N
         let N2 = otherDisk.N
         
+        let testI1 = self.J0() * Double(self.diskRect.size.width) * windHtFactor * self.windHt / self.N
+        
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
         
@@ -181,18 +186,18 @@ class PCH_DiskSection {
         
         if (isSameRadialPosition)
         {
-            firstTerm = (π * µ0 * N1 * N2 / (6.0 * 1.0 * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
+            firstTerm = (π * µ0 * N1 * N2 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         }
         else
         {
-            firstTerm = (π * µ0 * N1 * N2 / (3.0 * 1.0 * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
+            firstTerm = (π * µ0 * N1 * N2 / (3.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
         }
         
-        let epsilon = 1.0E-8; // this will decide when we stop the summation
+        let epsilon = 1.0E-10; // this will decide when we stop the summation
         
         var lastValue = -1.0;
         var currentValue = firstTerm;
-        let multiplier = π * µ0 * 1.0 * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
+        let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
         
         if (fabs((lastValue-currentValue) / lastValue) < epsilon)
         {
@@ -204,7 +209,7 @@ class PCH_DiskSection {
         {
             lastValue = currentValue;
             
-            let m = Double(n) * π / (1.0 * self.windHt)
+            let m = Double(n) * π / (windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
@@ -217,6 +222,16 @@ class PCH_DiskSection {
             {
                 currentValue += multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
             }
+            
+            /*
+            let test = fabs((lastValue-currentValue) / lastValue)
+            
+            
+            if (test < epsilon) && !isSameRadialPosition
+            {
+                DLog("Stop here")
+            }
+            */
         }
         
         return currentValue

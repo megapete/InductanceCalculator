@@ -81,7 +81,7 @@ func M0(x:Double) -> Double
         return 0.0
     }
     
-    return result / (π / 2.0)
+    return result * 2.0 / π
 }
 
 func M1X_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
@@ -112,7 +112,7 @@ func M1(x:Double) -> Double
         return 0.0
     }
     
-    return (1.0 - result) / (π / 2.0)
+    return (1.0 - result) * 2.0 / π
 }
 
 func IntM0T_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
@@ -142,5 +142,5 @@ func IntegralOf_M0_from0_to(b:Double) -> Double
         return 0.0
     }
     
-    return result / (π / 2.0)
+    return result * 2.0 / π
 }

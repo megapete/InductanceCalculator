@@ -34,22 +34,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var lkInd = L1 + L2 - 2.0 * M12
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
+
+*/
+/*
+        let lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, 2.965 * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
+        let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: -16.0 * 481.13 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.141, secData:PCH_SectionData(sectionID: "LV"))
+        let hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
+        let hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.4056 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.141, secData:PCH_SectionData(sectionID: "HV"))
         
-        lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, 2.965 * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
-        lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: -16.0 * 481.13 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.141)
-        hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
-        hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.4056 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.141)
-        
-        L1 = lv.SelfInductance()
-        L2 = hv.SelfInductance()
-        M12 = lv.MutualInductanceTo(hv)
+        let L1 = lv.SelfInductance()
+        let L2 = hv.SelfInductance()
+        let M12 = lv.MutualInductanceTo(hv)
+        let M21 = hv.MutualInductanceTo(lv)
         
         // The actual calculation for two-winding transformers (exactly right!!!)
         // This is the leakage inductance looking from the L1 (in this case LV) side
-        lkInd = L1 + gsl_pow_2(16.0 / 3200.0) * L2 - 2.0 * (16.0 / 3200.0) * M12
+        let lkInd = L1 + gsl_pow_2(16.0 / 3200.0) * L2 - 2.0 * (16.0 / 3200.0) * M12
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-        
+*/
+/*
         lvRect = NSMakeRect(18.3 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 1.198 * 25.4/1000.0, 39.409 * 25.4/1000)
         lv = PCH_DiskSection(diskRect: lvRect, N: 233.0, J: -233.0 * 166.667 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.18, coreRadius: 0.207)
         hvRect = NSMakeRect(22.928 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 1.198 * 25.4/1000.0, 39.409 * 25.4/1000)
@@ -110,7 +114,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // start at the top disk (the one that will be shot)
         var lv_diskRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (3.921 + 32.065) * 25.4/1000.0, 0.296 * 25.4/1000.0, 1.913 * 25.4/1000.00)
         let lv_diskPitch = (32.065 * 25.4/1000.0 / 16)
-        let lv_J = 481.13 * lv_turnsPerDisk / Double(hv_diskRect.size.width * hv_diskRect.size.height)
+        let lv_J = 481.13 * lv_turnsPerDisk / Double(lv_diskRect.size.width * lv_diskRect.size.height)
         let lv_ID = "LV"
         
         var lvCoil = [PCH_DiskSection]()
@@ -127,7 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // At this point, our two arrays hold all the disks from the two windings. Now we need to calculate self- and mutual-inductances. We start by combining the arrays into one big one
-        var coilArray = hvCoil + lvCoil
+        var coilArray = lvCoil + hvCoil
         
         for nextDisk in coilArray
         {
@@ -179,7 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // The mutual inductance serial number
         var mutIndSerialNum = 0
         
-        coilArray = hvCoil + lvCoil
+        coilArray = lvCoil + hvCoil
         for nextDisk in coilArray
         {
             // Separate the disk ID into the coil name and the disk number
@@ -243,7 +247,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     continue
                 }
                 
-                fileString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
+                // fileString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
                 
                 mutIndSerialNum++
             }

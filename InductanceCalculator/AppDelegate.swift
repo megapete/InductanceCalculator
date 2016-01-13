@@ -103,6 +103,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             hv_diskRect = hv_diskRect.offsetBy(dx: 0.0, dy:CGFloat(-hv_diskPitch))
         }
         
+        hvCoil = hvCoil.reverse()
+        
         // Job016 LV data
         let lv_capFirstDisk = 1.4734E-10
         let lv_capOtherDisks = 1.8072E-10
@@ -130,6 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             lv_diskRect = lv_diskRect.offsetBy(dx: 0.0, dy:CGFloat(-lv_diskPitch))
         }
         
+        lvCoil = lvCoil.reverse()
+        
         // At this point, our two arrays hold all the disks from the two windings. Now we need to calculate self- and mutual-inductances. We start by combining the arrays into one big one
         var coilArray = lvCoil + hvCoil
         
@@ -137,6 +141,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         {
             nextDisk.data.selfInductance = nextDisk.SelfInductance()
         }
+        
+        /* TESTING
+        for nextLVDisk in lvCoil
+        {
+            var testNum = 0
+            
+            for nextHVDisk in hvCoil
+            {
+                testNum++
+                
+                let mutInd = fabs(nextLVDisk.MutualInductanceTo(nextHVDisk))
+                
+                let mutIndCoeff = mutInd / sqrt(nextLVDisk.data.selfInductance * nextHVDisk.data.selfInductance)
+                if (mutIndCoeff < 0.0 || mutIndCoeff > 1.0)
+                {
+                    DLog("Fuck, fuck, fuck!")
+                }
+                
+                nextLVDisk.data.mutualInductances[nextHVDisk.data.sectionID] = mutInd
+                nextHVDisk.data.mutualInductances[nextLVDisk.data.sectionID] = mutInd
+                
+                nextLVDisk.data.mutIndCoeff[nextHVDisk.data.sectionID] = mutIndCoeff
+                nextHVDisk.data.mutIndCoeff[nextLVDisk.data.sectionID] = mutIndCoeff
+            }
+        }
+        */
+        
         
         while coilArray.count > 0
         {
@@ -161,6 +192,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
+        
         // We now have all the electrical data calculated and stored for our disks. We can finally create the SPICE input file. The node numbering and component numbering is as follows, where for a section ID of XXYYY:
         //  Input node: XXIYYY (Output Node: XXI(YYY+1)
         //  Middle mdoe: XXMYYY
@@ -181,7 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var fileString = String()
         
         // The mutual inductance serial number
-        var mutIndSerialNum = 0
+        var mutIndSerialNum = 1
         
         coilArray = lvCoil + hvCoil
         for nextDisk in coilArray
@@ -247,7 +279,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     continue
                 }
                 
-                // fileString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
+                fileString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
                 
                 mutIndSerialNum++
             }
@@ -280,6 +312,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             ALog("Could not write file!")
         }
 
+        DLog("Finished writing file")
     }
     
     func applicationWillTerminate(aNotification: NSNotification) {

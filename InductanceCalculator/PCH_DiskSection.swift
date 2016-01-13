@@ -62,7 +62,8 @@ class PCH_DiskSection {
     func J(n:Int) -> Double
     {
         let useWindht = self.windHtFactor * self.windHt
-        let useOriginY = (useWindht - self.windHt) / 2.0 + Double(self.diskRect.origin.y)
+        // let useOriginY = (useWindht - self.windHt) / 2.0 + Double(self.diskRect.origin.y)
+        let useOriginY = Double(self.diskRect.origin.y)
         
         return (2.0 * self.J / (Double(n) * π)) * (sin(Double(n) * π * (useOriginY + Double(self.diskRect.size.height)) / useWindht) - sin(Double(n) * π * useOriginY / useWindht));
     }
@@ -150,7 +151,7 @@ class PCH_DiskSection {
             return 0.0
         }
         
-        for var n = 1; fabs((lastValue-currentValue) / lastValue) > epsilon; n++
+        for var n = 1; n <= 150 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         {
             lastValue = currentValue;
             
@@ -177,7 +178,7 @@ class PCH_DiskSection {
         let N1 = self.N
         let N2 = otherDisk.N
         
-        let testI1 = self.J0() * Double(self.diskRect.size.width) * windHtFactor * self.windHt / self.N
+        // let testI1 = self.J0() * Double(self.diskRect.size.width) * windHtFactor * self.windHt / self.N
         
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
@@ -205,7 +206,9 @@ class PCH_DiskSection {
             return 0.0
         }
         
-        for var n = 1; fabs((lastValue-currentValue) / lastValue) > epsilon; n++
+        var termValue = [DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX]
+        
+        for var n = 1; n <= 150 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         {
             lastValue = currentValue;
             
@@ -220,18 +223,23 @@ class PCH_DiskSection {
             }
             else
             {
+                let termValueNew = [(self.J(n) * otherDisk.J(n)) / gsl_pow_4(m), otherDisk.C(n), IntegralOf_tI1_from(x1, toB: x2), otherDisk.D(n), IntegralOf_tK1_from(x1, toB: x2)]
+                
                 currentValue += multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
+                
+                termValue = termValueNew
             }
             
             /*
             let test = fabs((lastValue-currentValue) / lastValue)
             
             
-            if (test < epsilon) && !isSameRadialPosition
+            if (test < epsilon) && !isSameRadialPosition && n<200
             {
                 DLog("Stop here")
             }
             */
+            
         }
         
         return currentValue

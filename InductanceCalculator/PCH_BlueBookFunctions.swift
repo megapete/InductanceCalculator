@@ -43,6 +43,7 @@ func IntegralOf_tK1_from(a:Double, toB:Double) -> Double
     return IntegralOf_tK1_from0_to(toB) - IntegralOf_tK1_from0_to(a)
 }
 
+/* Unused functions
 func L0(x:Double) -> Double
 {
     return gsl_sf_bessel_I0(x) - M0(x)
@@ -52,7 +53,7 @@ func L1(x:Double) -> Double
 {
     return gsl_sf_bessel_I1(x) - M1(x)
 }
-
+*/
 
 func M0X_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
 {

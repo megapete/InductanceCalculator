@@ -151,7 +151,7 @@ class PCH_DiskSection {
             return 0.0
         }
         
-        for var n = 1; n <= 150 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
+        for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         {
             lastValue = currentValue;
             
@@ -208,7 +208,7 @@ class PCH_DiskSection {
         
         var termValue = [DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX]
         
-        for var n = 1; n <= 150 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
+        for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         {
             lastValue = currentValue;
             

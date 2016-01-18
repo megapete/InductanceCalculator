@@ -71,8 +71,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         
         // Now we try again but split each coil into sections. 
-        let lvCoilSections = 2
-        let hvCoilSections = 30
+        let lvCoilSections = 16
+        let hvCoilSections = 60
         
         var coilSections = [PCH_DiskSection]()
         

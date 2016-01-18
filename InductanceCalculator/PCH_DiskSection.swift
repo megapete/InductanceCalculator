@@ -86,10 +86,20 @@ class PCH_DiskSection {
         let useWindht = windHtFactor * self.windHt
         let xc = (Double(n) * π / useWindht) * self.coreRadius
         
+        // Alternate method from BlueBook 2nd Ed., page 267
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        let eBase = exp(2.0 * xc)
+        
+        return eBase * (Ri0 / Rk0) * self.C(n)
+        
+        /* old way
+        
         let I0 = gsl_sf_bessel_I0(xc)
         let K0 = gsl_sf_bessel_K0(xc)
         
         return I0 / K0 * self.C(n)
+        */
     }
     
     /// BlueBook function En
@@ -111,7 +121,12 @@ class PCH_DiskSection {
         let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
         let xc = m * self.coreRadius
         
-        return gsl_sf_bessel_I0(xc) / gsl_sf_bessel_K0(xc) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from0_to(x1)
+        // Alternate method from BlueBook 2nd Ed., page 267
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        let eBase = exp(2.0 * xc)
+        
+        return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from0_to(x1)
     }
     
     /// BlueBook function Gn
@@ -124,7 +139,12 @@ class PCH_DiskSection {
         let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
         let xc = m * self.coreRadius
         
-        return gsl_sf_bessel_I0(xc) / gsl_sf_bessel_K0(xc) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
+        // Alternate method from BlueBook 2nd Ed., page 267
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        let eBase = exp(2.0 * xc)
+        
+        return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
     }
     
     /// Rabins' method for calculating self-inductance

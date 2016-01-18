@@ -22,10 +22,12 @@ func IntegralOf_tL1_from(a:Double, toB:Double) -> Double
 
 func IntegralOf_tI1_from0_to(b:Double) -> Double
 {
-    let I0 = gsl_sf_bessel_I0(b)
-    let I1 = gsl_sf_bessel_I1(b)
+    // Alternate method from BlueBook 2nd Ed., page 267
+    let Ri0 = gsl_sf_bessel_I0_scaled(b)
+    let Ri1 = gsl_sf_bessel_I1_scaled(b)
+    let eBase = exp(b)
     
-    return (π / 2.0) * b * (M1(b) * I0 - M0(b) * I1)
+    return (π / 2.0) * b * eBase * (M1(b) * Ri0 - M0(b) * Ri1)
 }
 
 func IntegralOf_tI1_from(a:Double, toB:Double) -> Double
@@ -35,7 +37,12 @@ func IntegralOf_tI1_from(a:Double, toB:Double) -> Double
 
 func IntegralOf_tK1_from0_to(b:Double) -> Double
 {
-    return (π / 2.0) * (1.0 - b * (M1(b) * gsl_sf_bessel_K0(b) + M0(b) * gsl_sf_bessel_K1(b)))
+    // Alternate method from BlueBook 2nd Ed., page 267
+    let Rk0 = gsl_sf_bessel_K0_scaled(b)
+    let Rk1 = gsl_sf_bessel_K1_scaled(b)
+    let eBase = exp(-b)
+    
+    return (π / 2.0) * (1.0 - b * eBase * (M1(b) * Rk0 + M0(b) * Rk1))
 }
 
 func IntegralOf_tK1_from(a:Double, toB:Double) -> Double

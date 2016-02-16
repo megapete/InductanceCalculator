@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         var coilSections = [PCH_DiskSection]()
         
-        // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook
+        // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
         let resFactor = 3000.0
         
         var lvSectionArray = [PCH_DiskSection]()
@@ -235,7 +235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("SumL: \(sumL); SumM: \(sumM); Lcalc: \(sumL + sumM)")
         DLog("Diff: \(lkInd - (sumM + sumL))")
         
-
+        NSApplication.sharedApplication().terminate(self)
         return
         /*
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 / 2.0 * 25.4/1000)

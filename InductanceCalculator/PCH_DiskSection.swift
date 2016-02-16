@@ -157,33 +157,34 @@ class PCH_DiskSection {
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
         
-        let firstTerm = (π * µ0 * N1 * N1 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
+        var result = (π * µ0 * N1 * N1 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         
-        let epsilon = 1.0E-10; // this will decide when we stop the summation
         
-        var lastValue = -1.0;
-        var currentValue = firstTerm;
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
-        if (fabs((lastValue-currentValue) / lastValue) < epsilon)
-        {
-            ALog("Bad starting values for loop")
-            return 0.0
-        }
+        let convergenceIterations = 200
+        let loopQueue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+        var currVal = [Double](count: convergenceIterations, repeatedValue: 0.0)
         
-        for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
+        // for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
+        dispatch_apply(convergenceIterations, loopQueue)
         {
-            lastValue = currentValue;
+            (i:Int) -> Void in // this is the way to specify one of those "dangling" closures
+                
+            let n = i + 1
             
-            let m = Double(n) * π / (windHtFactor * self.windHt)
+            let m = Double(n) * π / (self.windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
             
-            currentValue += multiplier * (gsl_pow_2(J(n)) / gsl_pow_4(m) * (E(n) * IntegralOf_tI1_from(x1, toB: x2) + F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
+            currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
         }
         
-        return currentValue
+        // cool way to get the sum of the values in an array
+        result += currVal.reduce(0.0, combine: +)
+        
+        return result
     }
     
     /// Rabins' methods for mutual inductances
@@ -203,66 +204,59 @@ class PCH_DiskSection {
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
         
-        var firstTerm:Double
+        var result:Double
         
         if (isSameRadialPosition)
         {
-            firstTerm = (π * µ0 * N1 * N2 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
+            result = (π * µ0 * N1 * N2 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         }
         else
         {
-            firstTerm = (π * µ0 * N1 * N2 / (3.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
+            result = (π * µ0 * N1 * N2 / (3.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
         }
         
-        let epsilon = 1.0E-10; // this will decide when we stop the summation
-        
-        var lastValue = -1.0;
-        var currentValue = firstTerm;
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
         
-        if (fabs((lastValue-currentValue) / lastValue) < epsilon)
-        {
-            ALog("Bad starting values for loop")
-            return 0.0
-        }
         
-        var termValue = [DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX]
+        // After testing, I've decided to go with the BlueBook recommendation to simply execute the sumation 200 times insead of stopping after some informal definition of "convergence".
+        // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
-        for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
+        let convergenceIterations = 200
+        let loopQueue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+        var currVal = [Double](count: convergenceIterations, repeatedValue: 0.0)
+        
+        // for i in 0..<convergenceIterations
+        dispatch_apply(convergenceIterations, loopQueue)
         {
-            lastValue = currentValue;
+            (i:Int) -> Void in // this is the way to specify one of those "dangling" closures
             
-            let m = Double(n) * π / (windHtFactor * self.windHt)
+            let n = i + 1
+            
+            let m = Double(n) * π / (self.windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
             
             if (isSameRadialPosition)
             {
-                currentValue += multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (E(n) * IntegralOf_tI1_from(x1, toB: x2) + F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
+                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
             }
             else
             {
-                let termValueNew = [(self.J(n) * otherDisk.J(n)) / gsl_pow_4(m), otherDisk.C(n), IntegralOf_tI1_from(x1, toB: x2), otherDisk.D(n), IntegralOf_tK1_from(x1, toB: x2)]
+                // let termValueNew = [(self.J(n) * otherDisk.J(n)) / gsl_pow_4(m), otherDisk.C(n), IntegralOf_tI1_from(x1, toB: x2), otherDisk.D(n), IntegralOf_tK1_from(x1, toB: x2)]
                 
-                currentValue += multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
+                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
                 
-                termValue = termValueNew
+                // termValue = termValueNew
             }
             
-            /*
-            let test = fabs((lastValue-currentValue) / lastValue)
-            
-            
-            if (test < epsilon) && !isSameRadialPosition && n<200
-            {
-                DLog("Stop here")
-            }
-            */
             
         }
         
-        return currentValue
+        // cool way to get the sum of the values in an array
+        result += currVal.reduce(0.0, combine: +)
+        
+        return result
     }
 
-}
+} // end class declaration

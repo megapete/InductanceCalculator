@@ -67,6 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let lkInd = L2 + gsl_pow_2(3200.0 / 16.0) * L1 - 2.0 * (3200.0 / 16.0) * M12
         // var magEnergy = lkInd * 481.125 * 481.125 / 2.0
         
+        
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
         
         
@@ -79,6 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook
         let resFactor = 3000.0
         
+        var lvSectionArray = [PCH_DiskSection]()
         // do the lv first
         var lvZ = (2.25 + 1.913/2.0) * 25.4/1000.0
         let lvZStep = 32.065 / Double(lvCoilSections) * 25.4/1000
@@ -102,6 +104,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nextSection.data.selfInductance = nextSection.SelfInductance()
             
             coilSections.append(nextSection)
+            lvSectionArray.append(nextSection)
             
             lvZ += lvZStep
         }
@@ -117,6 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hvSerCapPerSection = 1.6185E-9 / hvSections
         let hvShuntCapPerSection = (6.5814E-12 + 1.0259E-22) * hvSections
         
+        var hvSectionArray = [PCH_DiskSection]()
         for var i=0; i<hvCoilSections; i++
         {
             let nextSectionRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, CGFloat(hvZ), 5.148 * 25.4/1000.0, CGFloat(hvZStep))
@@ -130,9 +134,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nextSection.data.selfInductance = nextSection.SelfInductance()
             
             coilSections.append(nextSection)
+            hvSectionArray.append(nextSection)
             
             hvZ += hvZStep
         }
+        
+        
         
         var cArray = coilSections
         
@@ -159,7 +166,77 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
             }
         }
+        
+        // inductance check (debugging)
+        // We have confirmed that the self-inductances are correct when comparing the value calculated with each coil as a whole with the value calculated from the individual disk self- and mutual-inductances. We now check the leakage inductance between the coils (from the HV point of view).
+        var L = [Double]()
+        var sumL = 0.0
+        var M = [Double]()
+        var sumM = 0.0
+        let turnsRatio = 3200.0 / 16.0
+        var lvHVMuts = [Double]()
+        
+        for var i=0; i<coilSections.count; i++
+        {
+            let nextSection = coilSections[i]
+            
+            L.append(nextSection.data.selfInductance)
+            
+            let sID = nextSection.data.sectionID
+            
+            var useTurnsRatio = 1.0
+            if (sID.substringWithRange(Range<String.Index>(start:sID.startIndex, end:sID.startIndex.advancedBy(2))) != "HV")
+            {
+                useTurnsRatio = turnsRatio
+            }
+            
+            sumL += useTurnsRatio * useTurnsRatio * nextSection.data.selfInductance
+            
+            for nextMutInd in nextSection.data.mutualInductances
+            {
+                let key = nextMutInd.0
+                
+                var useMratio = useTurnsRatio
+                
+                if (key.substringWithRange(Range<String.Index>(start:key.startIndex, end: key.startIndex.advancedBy(2))) != sID.substringWithRange(Range<String.Index>(start:sID.startIndex, end:sID.startIndex.advancedBy(2))))
+                {
+                    useMratio = -turnsRatio
+                    M.append(nextMutInd.1)
+                    sumM += useMratio * nextMutInd.1
+                }
+                else
+                {
+                    // The LV coil self-inductance includes the LV disk-disk mutual inductances in its calculation, so their mutual inductances must also be multiplied by the square of the turns ratio
+                    useMratio *= useMratio
+                    lvHVMuts.append(nextMutInd.1)
+                    L.append(nextMutInd.1)
+                    sumL += useMratio * nextMutInd.1
+                }
+            }
+            
+        }
+        
+        var testL = 0.0
+        for nextValue in lvHVMuts
+        {
+            testL += nextValue
+        }
+        for nextValue in L
+        {
+            testL += nextValue
+        }
+        
+        DLog("LV self-inductance: \(gsl_pow_2(3200.0 / 16.0) * L1)")
+        DLog("HV self-inductance: \(L2)")
+        DLog("Sum of self inductances: \(L2 + gsl_pow_2(3200.0 / 16.0) * L1)")
+        DLog("LV-HV Mutual Inductance: \(3200.0 / 16.0 * M12)")
+        
+        DLog("Leakage Inductance: \(lkInd)")
+        DLog("SumL: \(sumL); SumM: \(sumM); Lcalc: \(sumL + sumM)")
+        DLog("Diff: \(lkInd - (sumM + sumL))")
+        
 
+        return
         /*
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 / 2.0 * 25.4/1000)
         let lv1 = PCH_DiskSection(diskRect: lvRect, N: 8.0, J: 481.125 * 8.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV001"))

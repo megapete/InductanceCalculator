@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D38131401C72A5350024B558 /* PCH_Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = D381313F1C72A5350024B558 /* PCH_Matrix.swift */; };
 		D3E0F6AE1C3012A400C67699 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */; };
 		D3E0F6B01C3012A400C67699 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3E0F6AF1C3012A400C67699 /* Assets.xcassets */; };
 		D3E0F6B31C3012A400C67699 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D3E0F6B11C3012A400C67699 /* MainMenu.xib */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D381313F1C72A5350024B558 /* PCH_Matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_Matrix.swift; sourceTree = "<group>"; };
 		D3E0F6AA1C3012A300C67699 /* InductanceCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InductanceCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D3E0F6AF1C3012A400C67699 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 				D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */,
 				D3E0F6BE1C30163700C67699 /* PCH_DiskSection.swift */,
 				D3E0F6C91C31676D00C67699 /* PCH_SectionData.swift */,
+				D381313F1C72A5350024B558 /* PCH_Matrix.swift */,
 				D3E0F6AF1C3012A400C67699 /* Assets.xcassets */,
 				D3E0F6B11C3012A400C67699 /* MainMenu.xib */,
 				D3E0F6B41C3012A400C67699 /* Info.plist */,
@@ -152,6 +155,7 @@
 				D3E0F6AE1C3012A400C67699 /* AppDelegate.swift in Sources */,
 				D3E0F6BD1C30149600C67699 /* GlobalDefs.swift in Sources */,
 				D3E0F6C81C3021B500C67699 /* PCH_BlueBookFunctions.swift in Sources */,
+				D38131401C72A5350024B558 /* PCH_Matrix.swift in Sources */,
 				D3E0F6BF1C30163700C67699 /* PCH_DiskSection.swift in Sources */,
 				D3E0F6BB1C30145C00C67699 /* PCH_Defs.swift in Sources */,
 				D3E0F6CA1C31676D00C67699 /* PCH_SectionData.swift in Sources */,
@@ -306,6 +310,7 @@
 				D3E0F6B91C3012A400C67699 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

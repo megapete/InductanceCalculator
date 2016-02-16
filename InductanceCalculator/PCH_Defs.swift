@@ -60,10 +60,20 @@ func ALog(message:String, file:String = __FILE__, function:String = __FUNCTION__
     - parameter condition: The condition that must be true to not assert
     - parameter message: The message to show if condition is false
 */
-func ZAssert(condition:Bool, message:String)
+func ZAssert(condition:Bool, message:String, file:String = __FILE__, function:String = __FUNCTION__, line:Int = __LINE__)
 {
     if !condition
     {
-        ALog(message)
+        #if DEBUG
+            
+            let msgString = file + " : " + function + " : " + String(line) + " : " + message
+            
+            assert(false, msgString)
+            
+        #else
+            
+            print("\(file) : \(function) : \(line) : \(message)\n", terminator: "")
+            
+        #endif
     }
 }

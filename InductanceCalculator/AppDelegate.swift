@@ -56,9 +56,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
-        let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV"))
+        let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
         var hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
-        let hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV"))
+        let hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV", serNum:1, inNode:2, outNode:3))
         
         let L1 = lv.SelfInductance()
         let L2 = hv.SelfInductance()
@@ -71,9 +71,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
         
         
+        // Create the special "ground" section. By convention, it has a serial number of -1.
+        let gndSection = PCH_DiskSection(diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
+        
         // Now we try again but split each coil into sections. 
-        let lvCoilSections = 16
-        let hvCoilSections = 60
+        let lvCoilSections = 4
+        let hvCoilSections = 4
         
         var coilSections = [PCH_DiskSection]()
         
@@ -91,10 +94,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let lvSerCapPerSection = 1.8072E-10 / lvN
         let lvShuntCapPerSection = (3.9534E-11 + 3.2097E-11) * lvN
         
+        var sectionSerialNumber = 0
+        var nodeSerialNumber = 0
+        
         for var i=0; i<lvCoilSections; i++
         {
             let nextSectionRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, CGFloat(lvZ), 0.296 * 25.4/1000.0, CGFloat(lvZStep))
-            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", lvcoilID, i+1))
+            
+            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", lvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
+            
+            sectionSerialNumber++
+            nodeSerialNumber++
+            
             nextSectionData.resistance = lvResPerSection
             nextSectionData.seriesCapacitance = lvSerCapPerSection
             nextSectionData.shuntCapacitances["0"] = lvShuntCapPerSection
@@ -109,6 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             lvZ += lvZStep
         }
         
+        nodeSerialNumber++
         // And now the HV
         var hvZ = 2.75 * 25.4/1000.0
         let hvZStep = 32.495 / Double(hvCoilSections) * 25.4/1000
@@ -124,7 +136,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for var i=0; i<hvCoilSections; i++
         {
             let nextSectionRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, CGFloat(hvZ), 5.148 * 25.4/1000.0, CGFloat(hvZStep))
-            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", hvcoilID, i+1))
+            
+            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", hvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
+            sectionSerialNumber++
+            nodeSerialNumber++
+            
             nextSectionData.resistance = hvResPerSection
             nextSectionData.seriesCapacitance = hvSerCapPerSection
             nextSectionData.shuntCapacitances["0"] = hvShuntCapPerSection
@@ -161,14 +177,141 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 nDisk.data.mutualInductances[otherDisk.data.sectionID] = mutInd
                 otherDisk.data.mutualInductances[nDisk.data.sectionID] = mutInd
                 
+                // This ends up being the important thing to do
+                nDisk.data.mutInd[otherDisk] = mutInd
+                otherDisk.data.mutInd[nDisk] = mutInd
+                
                 nDisk.data.mutIndCoeff[otherDisk.data.sectionID] = mutIndCoeff
                 otherDisk.data.mutIndCoeff[nDisk.data.sectionID] = mutIndCoeff
                 
             }
         }
         
+        // Create the inductance matrix, resistance matrix, and capacitance (base) matrix
+        
+        // We start by defining a couple of somewhat obvious constants (this is for future reference to see what the strategy is for defining the number of sections and nodes).
+        let sectionCount = lvCoilSections + hvCoilSections
+        let nodeCount = (lvCoilSections + 1) + (hvCoilSections + 1)
+        
+        let M = PCH_Matrix(numRows: sectionCount, numCols: sectionCount, matrixPrecision: PCH_Matrix.precisions.doublePrecision, matrixType: PCH_Matrix.types.positiveDefinite)
+        
+        let R = PCH_Matrix(numRows: sectionCount, numCols: sectionCount, matrixPrecision: PCH_Matrix.precisions.doublePrecision, matrixType: PCH_Matrix.types.diagonalMatrix)
+        
+        // B could be defined as a banded matrix, but at the time of this writing, multiplication has not yet been implemented for banded matrices in PCH_Matrix.
+        let B = PCH_Matrix(numRows: sectionCount, numCols: nodeCount, matrixPrecision: PCH_Matrix.precisions.doublePrecision, matrixType: PCH_Matrix.types.generalMatrix)
+        
+        // A could also be defined as banded, see the comment above for matrix B
+        let A = PCH_Matrix(numRows: nodeCount, numCols: sectionCount, matrixPrecision: PCH_Matrix.precisions.doublePrecision, matrixType: PCH_Matrix.types.generalMatrix)
+        
+        let Cbase = PCH_Matrix(numRows: nodeCount, numCols: nodeCount, matrixPrecision: PCH_Matrix.precisions.doublePrecision, matrixType: PCH_Matrix.types.symmetricMatrix)
+        
+        let lvNodeBase = 0
+        let hvNodeBase = lvCoilSections + 1
+        
+        let startNodes = [lvNodeBase, hvNodeBase]
+        let endNodes = [lvCoilSections, hvNodeBase + hvCoilSections]
+        
+        // we need to keep track of the previous section for the capacitance matrix
+        var prevSection:PCH_DiskSection? = nil
+        
+        for sectionIndex in 0..<coilSections.count
+        {
+            if (startNodes.contains(sectionIndex))
+            {
+                prevSection = nil
+            }
+            
+            let nextSection = coilSections[sectionIndex]
+            
+            let currentSectionNumber = nextSection.data.serialNumber
+            
+            // start with the inductance matrix
+            M[currentSectionNumber, currentSectionNumber] = nextSection.data.selfInductance
+            
+            for (section, mutInd) in nextSection.data.mutInd
+            {
+                // only add the mutual inductances once (the matrix is symmetric)
+                if (section.data.serialNumber > currentSectionNumber)
+                {
+                    M[currentSectionNumber, section.data.serialNumber] = mutInd
+                }
+            }
+            
+            // Now we do the resistance matrix
+            R[currentSectionNumber, currentSectionNumber] = nextSection.data.resistance
+            
+            // And the B matrix
+            B[currentSectionNumber, nextSection.data.nodes.inNode] = 1.0
+            B[currentSectionNumber, nextSection.data.nodes.outNode] = -1.0
+            
+            // We will adopt the ATP style of dividing the shunt capacitances in two for each section ad applying it out of each node (and thus to each node) of the connected section.
+            
+            // We need to take care of the bottommost and topmost nodes of each coil
+            var Cj = 0.0
+            var sumKip = 0.0
+            if (prevSection != nil)
+            {
+                Cj = prevSection!.data.seriesCapacitance
+                
+                for (section, shuntC) in prevSection!.data.shuntCaps
+                {
+                    sumKip += shuntC / 2.0
+                    
+                    // we don't include ground nodes in this part
+                    if (section.data.sectionID != "GND")
+                    {
+                        Cbase[prevSection!.data.nodes.outNode, section.data.nodes.outNode] = -shuntC / 2.0
+                    }
+                }
+            }
+            
+            let Cj1 = nextSection.data.seriesCapacitance
+            
+            for (section, shuntC) in nextSection.data.shuntCaps
+            {
+                sumKip += shuntC / 2.0
+                
+                if (section.data.sectionID != "GND")
+                {
+                    Cbase[nextSection.data.nodes.inNode, section.data.nodes.inNode] += -shuntC / 2.0
+                }
+            }
+            
+            Cbase[nextSection.data.nodes.inNode, nextSection.data.nodes.inNode] = Cj + Cj1 + sumKip
+            
+            if (prevSection != nil)
+            {
+                Cbase[nextSection.data.nodes.inNode, prevSection!.data.nodes.inNode] = -Cj
+            }
+            
+            Cbase[nextSection.data.nodes.inNode, nextSection.data.nodes.outNode] = -Cj1
+            
+            if (prevSection != nil)
+            {
+                A[nextSection.data.nodes.inNode, sectionIndex-1] = 1
+            }
+            
+            if (endNodes.contains(nextSection.data.nodes.outNode))
+            {
+                A[nextSection.data.nodes.outNode, sectionIndex] = 1
+            }
+            
+            A[nextSection.data.nodes.inNode, sectionIndex] = -1
+            
+        
+            
+            prevSection = nextSection
+        }
+        
+        DLog("C: \(Cbase)")
+        DLog("M: \(M)")
+        DLog("A: \(A)")
+        DLog("B: \(B)")
+        DLog("R: \(R)")
+        
         // inductance check (debugging)
         // We have confirmed that the self-inductances are correct when comparing the value calculated with each coil as a whole with the value calculated from the individual disk self- and mutual-inductances. We now check the leakage inductance between the coils (from the HV point of view).
+        /*
         var L = [Double]()
         var sumL = 0.0
         var M = [Double]()
@@ -235,6 +378,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("SumL: \(sumL); SumM: \(sumM); Lcalc: \(sumL + sumM)")
         DLog("Diff: \(lkInd - (sumM + sumL))")
         
+        */
+        
         NSApplication.sharedApplication().terminate(self)
         return
         /*
@@ -290,6 +435,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let coilSections = [lv1,lv2,hv1,hv2]
 */
+        /* SPICE-FILE STUFF FROM HERE ONE
         
         var fString = String()
         var mutSerNum = 1
@@ -383,6 +529,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.saveFileWithString(fString)
         
         return
+        
+        
+
         // Interesting stuff starts here
         // Create the special section for ground. In SPICE, this always has the ID of '0'
         let ground = PCH_SectionData(sectionID: "0")
@@ -612,7 +761,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DLog("Finished writing file")
-*/
+*/*/
     }
     
     func saveFileWithString(fileString:String)

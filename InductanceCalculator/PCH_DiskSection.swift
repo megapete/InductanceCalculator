@@ -8,7 +8,17 @@
 
 import Cocoa
 
-class PCH_DiskSection {
+/// The == function must be defined for Hashable types
+internal func ==(lhs:PCH_DiskSection, rhs:PCH_DiskSection) -> Bool
+{
+    return (lhs.data.serialNumber == rhs.data.serialNumber)
+}
+
+class PCH_DiskSection:Hashable {
+    
+    internal var hashValue: Int {
+        return self.data.serialNumber
+    }
 
     /// The number of turns in the section
     let N:Double

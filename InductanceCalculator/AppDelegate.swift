@@ -216,12 +216,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         for sectionIndex in 0..<coilSections.count
         {
-            if (startNodes.contains(sectionIndex))
+            let nextSection = coilSections[sectionIndex]
+            
+            if (startNodes.contains(nextSection.data.nodes.inNode))
             {
                 prevSection = nil
             }
-            
-            let nextSection = coilSections[sectionIndex]
             
             let currentSectionNumber = nextSection.data.serialNumber
             
@@ -244,7 +244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             B[currentSectionNumber, nextSection.data.nodes.inNode] = 1.0
             B[currentSectionNumber, nextSection.data.nodes.outNode] = -1.0
             
-            // We will adopt the ATP style of dividing the shunt capacitances in two for each section ad applying it out of each node (and thus to each node) of the connected section.
+            // We will adopt the ATP style of dividing the shunt capacitances in two for each section and applying it out of each node (and thus to each node) of the connected section.
             
             // We need to take care of the bottommost and topmost nodes of each coil
             var Cj = 0.0
@@ -303,11 +303,104 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             prevSection = nextSection
         }
         
-        DLog("C: \(Cbase)")
-        DLog("M: \(M)")
-        DLog("A: \(A)")
-        DLog("B: \(B)")
-        DLog("R: \(R)")
+        // DLog("C: \(Cbase)")
+        // DLog("M: \(M)")
+        // DLog("A: \(A)")
+        // DLog("B: \(B)")
+        // DLog("R: \(R)")
+        
+        // At this point, all the matrices are filled. All we need to do is adjust the C matrix to take into account the nodes that are either connected to ground or to our voltage source. Note that other circuit modifications can also be done, per section 13 of the Bluebook, 2E (see formulae 13.81 to 13.83). Also note that most modifications made here will cause an adjustment to be made in the AI matrix as well.
+        
+        let C = PCH_Matrix(sourceMatrix: Cbase)!
+        
+        // We set the grounded nodes so that dV/dt at that node is zero. To do that, we set the row of the node 'i' to all zeros, except entry [i,i], which we set to 1. We will then set the i-th row in the vector AI to 0 below. We also do the same thing for the "shot" node, except that its derivative will be calculated at each time step.
+        
+        var lvBottomRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        lvBottomRow[lvNodeBase] = 1.0
+        C.SetRow(lvNodeBase, buffer: lvBottomRow)
+        
+        var lvTopRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        lvTopRow[lvCoilSections] = 1.0
+        C.SetRow(lvCoilSections, buffer: lvTopRow)
+        
+        var hvBottomRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        hvBottomRow[hvNodeBase] = 1.0
+        C.SetRow(hvNodeBase, buffer: hvBottomRow)
+        
+        var hvTopRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        hvTopRow[hvNodeBase + hvCoilSections] = 1.0
+        C.SetRow(hvNodeBase + hvCoilSections, buffer: hvTopRow)
+        
+        DLog("Adjusted C: \(C)")
+        
+        // For the shot terminal, we use the old standard formula, V0 * (e^(-at) - e^(-bt)). The constants are k1 = 14400 and k2 = 3E6
+        // The derivative of this function with respect to t is: dV/dt = V0 * (be^(-bt) - ae^(-at))
+        let V0 = 550000.0 * 1.03
+        
+        
+        // All right, we now set the starting conditions for our Runge-Kutta implementation. This is quite simple because at time 0, everything is 0, and PCH_Matrix initializes all values to 0
+        
+        var I = PCH_Matrix(numVectorElements: coilSections.count, vectorPrecision: PCH_Matrix.precisions.doublePrecision)
+        var V = PCH_Matrix(numVectorElements: hvNodeBase + hvCoilSections + 1, vectorPrecision: PCH_Matrix.precisions.doublePrecision)
+        
+        // Set the time step. For debugging, we're going somewhat coarse.
+        let h = 10.0E-9
+        // The overall time that the simulation will run
+        let maxTime = 100.0E-6
+        // The current time
+        var simTime = 0.0
+        
+        while simTime <= maxTime
+        {
+            // Set the right-size vectors:
+            // var BV = B * V
+            // var RI = R * I
+            var AI = (A * I)!
+            
+            // We will start with the solution of dV/dt to set the V vector. We're going to use a fourth-order Runge-Kutta algorithm (plenty of websites, see http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html or http://www.myphysicslab.com/runge_kutta.html for details)
+            // first solution
+            // fix AI
+            AI[lvNodeBase, 0] = 0.0
+            AI[lvCoilSections, 0] = 0.0
+            AI[hvNodeBase, 0] = 0.0
+            AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime)
+            
+            let an = C.SolveWith(AI)!
+            
+            let bn = C.SolveWith(AI + h/2.0 * an)!
+            let cn = C.SolveWith(AI + h/2.0 * bn)!
+            let dn = C.SolveWith(AI + h * cn)!
+            
+            DLog("AI: \(AI)")
+            DLog("an: \(an)")
+            DLog("bn: \(an)")
+            DLog("cn: \(an)")
+            DLog("dn: \(an)")
+            
+            let newV = V + h/6.0 * (an + 2.0 * bn + 2.0 * cn + dn)
+            
+            var BV = (B * newV)!
+            var RI = (R * I)!
+            
+            let rtSide = BV - RI
+            
+            let aan = M.SolveWith(rtSide)!
+            let bbn = M.SolveWith(rtSide + h/2.0 * aan)!
+            let ccn = M.SolveWith(rtSide + h/2.0 * bbn)!
+            let ddn = M.SolveWith(rtSide + h/2.0 * ccn)!
+            
+            let newI = I + h/6.0 * (aan + 2.0 * bbn + 2.0 * ccn + ddn)
+            
+            DLog("Old V: \(V)")
+            DLog("New V: \(newV)")
+            
+            DLog("Old I: \(I)")
+            DLog("New I: \(newI)")
+            
+            I = newI
+            V = newV
+            simTime += h
+        }
         
         // inductance check (debugging)
         // We have confirmed that the self-inductances are correct when comparing the value calculated with each coil as a whole with the value calculated from the individual disk self- and mutual-inductances. We now check the leakage inductance between the coils (from the HV point of view).
@@ -762,6 +855,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         DLog("Finished writing file")
 */*/
+    }
+    
+    func derivativeOfBIL(V:Double, t:Double) -> Double
+    {
+        let k1 = 14400.0
+        let k2 = 3.0E6
+        
+        return V * (k2 * exp(-k2 * t) - k1 * exp(-k1 * t))
+        
     }
     
     func saveFileWithString(fileString:String)

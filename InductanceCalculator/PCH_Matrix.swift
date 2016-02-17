@@ -34,6 +34,31 @@ func *(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix?
     return left.MultiplyBy(right)
 }
 
+func *(left:Double, right:PCH_Matrix) -> PCH_Matrix
+{
+    let result = PCH_Matrix(sourceMatrix: right)!
+    
+    for row in 0..<result.numRows
+    {
+        for col in 0..<result.numCols
+        {
+            result[row,col] *= left
+        }
+    }
+    
+    return result
+}
+
+func +(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix
+{
+    return left.AddSubtract(right)
+}
+
+func -(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix
+{
+    return left.AddSubtract(right, isAdd: false)
+}
+
 
 // Operators for Complex types
 
@@ -1826,6 +1851,45 @@ class PCH_Matrix:CustomStringConvertible
     }
     
     /**
+        Set an entire row in a double-precision matrix to the values passed in via buffer. Usually, buffer.count is equal to self.numCols. If buffer.count < self.numCols, then the rest of the row is padded with zeroes. If buffer.count > self.numCols, only the first self.numCols values are set.
+        
+        - parameter: rowNum: The row that will be replaced by the passed-in buffer
+        - parameter: buffer: The array of Doubles that will be used
+    */
+    func SetRow(rowNum:Int, buffer:[Double])
+    {
+        ZAssert(self.matrixPrecision == precisions.doublePrecision, message: "This function is for double-precision values")
+        
+        ZAssert(rowNum < self.numRows && rowNum >= 0, message: "Illegal row number")
+        
+        var useBuffer = buffer
+    
+        if (buffer.count < self.numCols)
+        {
+            let zeroesToAdd = self.numCols - buffer.count
+            
+            for _ in 0..<zeroesToAdd
+            {
+                useBuffer.append(0.0)
+            }
+        }
+        else if (buffer.count > self.numCols)
+        {
+            let numsToRemove = buffer.count - self.numCols
+            
+            for _ in 0..<numsToRemove
+            {
+                useBuffer.removeLast()
+            }
+        }
+        
+        for col in 0..<useBuffer.count
+        {
+            self[rowNum, col] = useBuffer[col]
+        }
+    }
+    
+    /**
      Add an entire column to a double-precision matrix.
      
      - parameter colNum: The column number that will be set to the values in colBuffer
@@ -2257,6 +2321,41 @@ class PCH_Matrix:CustomStringConvertible
             return nil
         }
         
+    }
+    
+    /**
+        Add/subtract self (A) and matrix X and return the result in B
+     
+        - parameter X: The X matrix
+        - parameter isAdd: If 'true' then return A+X, otherwise return A-X
+        
+        - returns: The B matrix (same type as self (A))
+    */
+    func AddSubtract(X:PCH_Matrix, isAdd:Bool = true) -> PCH_Matrix
+    {
+        ZAssert(self.numRows == X.numRows && self.numCols == X.numCols, message: "A and X matrices must have identical dimensions!")
+        ZAssert(self.matrixPrecision == X.matrixPrecision, message: "Both matrices must be of the same precision")
+        
+        let B = PCH_Matrix(sourceMatrix: self)!
+        
+        for row in 0..<self.numRows
+        {
+            for col in 0..<self.numCols
+            {
+                if (self.matrixPrecision == precisions.doublePrecision)
+                {
+                    let result:Double = (isAdd ? self[row,col] + X[row,col] : self[row,col] - X[row,col])
+                    B[row,col] = result
+                }
+                else
+                {
+                    let result:Complex = (isAdd ? self[row,col] + X[row,col] : self[row,col] - X[row,col])
+                    B[row,col] = result
+                }
+            }
+        }
+        
+        return B
     }
     
     /**

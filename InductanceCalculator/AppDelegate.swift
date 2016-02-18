@@ -301,6 +301,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             */
             
+            DLog("Total Kip for this node: \(sumKip)")
+            
             // take care of the final node
             if (endNodes.contains(nextSection.data.nodes.outNode))
             {
@@ -311,7 +313,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     
                     if (section.data.sectionID != "GND")
                     {
-                        Cbase[nextSection.data.nodes.outNode, section.data.nodes.inNode] += -shuntC / 2.0
+                        // Cbase[nextSection.data.nodes.outNode, section.data.nodes.inNode] += -shuntC / 2.0
                         Cbase[nextSection.data.nodes.outNode, section.data.nodes.outNode] += -shuntC / 2.0
                     }
                 }
@@ -362,7 +364,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // For the shot terminal, we use the old standard formula, V0 * (e^(-at) - e^(-bt)). The constants are k1 = 14400 and k2 = 3E6
         // The derivative of this function with respect to t is: dV/dt = V0 * (be^(-bt) - ae^(-at)).
-        let V0 = 550.0 * 1.03
+        let V0 = 550.0E3 * 1.03
         
         
         // All right, we now set the starting conditions for our Runge-Kutta implementation. This is quite simple because at time 0, everything is 0, and PCH_Matrix initializes all values to 0

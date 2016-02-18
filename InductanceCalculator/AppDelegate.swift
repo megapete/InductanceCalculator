@@ -361,7 +361,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("Adjusted C: \(C)")
         
         // For the shot terminal, we use the old standard formula, V0 * (e^(-at) - e^(-bt)). The constants are k1 = 14400 and k2 = 3E6
-        // The derivative of this function with respect to t is: dV/dt = V0 * (be^(-bt) - ae^(-at))
+        // The derivative of this function with respect to t is: dV/dt = V0 * (be^(-bt) - ae^(-at)).
         let V0 = 550.0 * 1.03
         
         
@@ -373,7 +373,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Set the time step. For debugging, we're going somewhat coarse.
         let h = 10.0E-9
         // The overall time that the simulation will run
-        let maxTime = 1.2E-6
+        let maxTime = 20.0E-6
         // The current time
         var simTime = 0.0
         
@@ -382,7 +382,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Set the right-size vectors:
             // var BV = B * V
             // var RI = R * I
-            var AI = (A * I)!
+            let AI = (A * I)!
             
             // We will start with the solution of dV/dt to set the V vector. We're going to use a fourth-order Runge-Kutta algorithm (plenty of websites, see http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html or http://www.myphysicslab.com/runge_kutta.html for details)
             // first solution
@@ -391,33 +391,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             AI[lvCoilSections, 0] = 0.0
             AI[hvNodeBase, 0] = 0.0
             
-            // get the derivative at the current simulation time
+            // Get the derivative at the current simulation time. Note that in this case, the derivative is not actually a function of V. The only thing we do is calculate the derivative accoridng to the voltage formula we're using (at current time, current time + h/2, and current time + h, as required by 4th order Runge-Kutta).
             AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime)
-            DLog("AI: \(AI)")
+            // DLog("AI: \(AI)")
             
             let an = C.SolveWith(AI)!
-            DLog("an: \(an)")
+            // DLog("an: \(an)")
             
             AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime + h/2)
-            DLog("AI: \(AI)")
+            // DLog("AI: \(AI)")
             let bn = C.SolveWith(AI)!
             let cn = bn
-            DLog("bn: \(bn)")
+            // DLog("bn: \(bn)")
             
             AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime + h)
             let dn = C.SolveWith(AI)!
-            DLog("dn: \(dn)")
+            // DLog("dn: \(dn)")
             
             let newV = V + h/6.0 * (an + 2.0 * bn + 2.0 * cn + dn)
             
-            DLog("Old V: \(V)")
-            DLog("New V: \(newV)")
+            // DLog("Old V: \(V)")
+            // DLog("New V: \(newV)")
             
             var BV = (B * newV)!
             var RI = (R * I)!
             
             var rtSide = BV - RI
             
+            // The current derivative IS a function of I, so this is a more "traditional" calculation using Runge-Kutta.
             let aan = M.SolveWith(rtSide)!
             
             var newI = I + (h/2.0 * aan)
@@ -517,7 +518,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         */
         
         NSApplication.sharedApplication().terminate(self)
-        return
+        // return
+        
         /*
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 / 2.0 * 25.4/1000)
         let lv1 = PCH_DiskSection(diskRect: lvRect, N: 8.0, J: 481.125 * 8.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV001"))
@@ -571,7 +573,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let coilSections = [lv1,lv2,hv1,hv2]
 */
-        /* SPICE-FILE STUFF FROM HERE ONE
+        // SPICE-FILE STUFF FROM HERE ONE
         
         var fString = String()
         var mutSerNum = 1
@@ -666,7 +668,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         return
         
-        
+        /*
 
         // Interesting stuff starts here
         // Create the special section for ground. In SPICE, this always has the ID of '0'
@@ -902,8 +904,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func derivativeOfBIL(V:Double, t:Double) -> Double
     {
-        let k1 = 14400.0
-        let k2 = 3.0E6
+        let k1 = 14285.0
+        let k2 = 3.333333E6
         
         return V * (k2 * exp(-k2 * t) - k1 * exp(-k1 * t))
         

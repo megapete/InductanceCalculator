@@ -109,6 +109,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nextSectionData.resistance = lvResPerSection
             nextSectionData.seriesCapacitance = lvSerCapPerSection
             nextSectionData.shuntCapacitances["0"] = lvShuntCapPerSection
+            nextSectionData.shuntCaps[gndSection] = lvShuntCapPerSection
             
             let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: lvN, J: lvN * lvI / Double(nextSectionRect.width * nextSectionRect.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData: nextSectionData)
             
@@ -144,6 +145,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nextSectionData.resistance = hvResPerSection
             nextSectionData.seriesCapacitance = hvSerCapPerSection
             nextSectionData.shuntCapacitances["0"] = hvShuntCapPerSection
+            nextSectionData.shuntCaps[gndSection] = hvShuntCapPerSection
             
             let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: hvN, J: hvN * hvI / Double(nextSectionRect.width * nextSectionRect.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData: nextSectionData)
             
@@ -263,6 +265,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         Cbase[prevSection!.data.nodes.outNode, section.data.nodes.outNode] = -shuntC / 2.0
                     }
                 }
+                
+                Cbase[nextSection.data.nodes.inNode, prevSection!.data.nodes.inNode] = -Cj
+                
+                A[nextSection.data.nodes.inNode, sectionIndex-1] = 1
             }
             
             let Cj1 = nextSection.data.seriesCapacitance
@@ -279,26 +285,47 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             Cbase[nextSection.data.nodes.inNode, nextSection.data.nodes.inNode] = Cj + Cj1 + sumKip
             
+            /* taken care of above
             if (prevSection != nil)
             {
                 Cbase[nextSection.data.nodes.inNode, prevSection!.data.nodes.inNode] = -Cj
             }
+            */
             
             Cbase[nextSection.data.nodes.inNode, nextSection.data.nodes.outNode] = -Cj1
             
+            /* taken care of above
             if (prevSection != nil)
             {
                 A[nextSection.data.nodes.inNode, sectionIndex-1] = 1
             }
+            */
             
+            // take care of the final node
             if (endNodes.contains(nextSection.data.nodes.outNode))
             {
+                sumKip = 0.0
+                for (section, shuntC) in nextSection.data.shuntCaps
+                {
+                    sumKip += shuntC / 2.0
+                    
+                    if (section.data.sectionID != "GND")
+                    {
+                        Cbase[nextSection.data.nodes.outNode, section.data.nodes.inNode] += -shuntC / 2.0
+                        Cbase[nextSection.data.nodes.outNode, section.data.nodes.outNode] += -shuntC / 2.0
+                    }
+                }
+                
+                Cj = Cj1
+                
+                Cbase[nextSection.data.nodes.outNode, nextSection.data.nodes.outNode] = Cj + sumKip
+                
+                Cbase[nextSection.data.nodes.outNode, nextSection.data.nodes.inNode] = -Cj
+                
                 A[nextSection.data.nodes.outNode, sectionIndex] = 1
             }
             
             A[nextSection.data.nodes.inNode, sectionIndex] = -1
-            
-        
             
             prevSection = nextSection
         }

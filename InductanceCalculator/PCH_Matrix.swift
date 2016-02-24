@@ -2768,6 +2768,37 @@ class PCH_Matrix:CustomStringConvertible
                     }
                 }
                 
+                // Testing with TME job 016 is giving issues when increasing the number of subdivisions of the HV winding beyond 30 on the laptop and around 36 on the desktop machines. I am going to try a different LAPACK call, dposvx, which is supposed to "equilibrate" the system.
+                
+                var fact:Int8 = 69 // 'E'
+                var uplo:Int8 = 85 // 'U'
+                var n = __CLPK_integer(self.numRows)
+                var nrhs = __CLPK_integer(B.numCols)
+                var lda = n
+                var Bm = B.doubleBuffer!
+                var ldb = n
+                var info = __CLPK_integer(0)
+                
+                var AF = [__CLPK_doublereal](count: self.numRows * self.numCols, repeatedValue: 0.0)
+                var ldaf = n
+                var equed:Int8 = 0
+                var S = [__CLPK_doublereal](count:self.numRows, repeatedValue:0.0)
+                
+                var X = [__CLPK_doublereal](count:self.numRows * B.numCols, repeatedValue:0.0)
+                var ldx = n
+                
+                var rcond:__CLPK_doublereal = 0.0
+                
+                var ferr = [__CLPK_doublereal](count:B.numCols, repeatedValue:0.0)
+                var berr = [__CLPK_doublereal](count:B.numCols, repeatedValue:0.0)
+                
+                var work = [__CLPK_doublereal](count:3 * self.numRows, repeatedValue:0.0)
+                var iwork = [__CLPK_integer](count: self.numRows, repeatedValue: __CLPK_integer(0))
+                
+                dposvx_(&fact, &uplo, &n, &nrhs, &Am, &lda, &AF, &ldaf, &equed, &S, &Bm, &ldb, &X, &ldx, &rcond, &ferr, &berr, &work, &iwork, &info)
+                
+                /* Simple dposv_ call, which fails with high number of disks and large differences between LV and HV winding inductances (ie: high ratio).
+                
                 var uplo:Int8 = 85
                 var n = __CLPK_integer(self.numRows)
                 var nrhs = __CLPK_integer(B.numCols)
@@ -2777,6 +2808,7 @@ class PCH_Matrix:CustomStringConvertible
                 var info = __CLPK_integer(0)
                 
                 dposv_(&uplo, &n, &nrhs, &Am, &lda, &Bm, &ldb, &info)
+                */
                 
                 if (info != 0)
                 {
@@ -2785,7 +2817,8 @@ class PCH_Matrix:CustomStringConvertible
                     return nil
                 }
                 
-                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: Bm, matrixType: B.matrixType)
+                
+                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: X, matrixType: B.matrixType)
                 
             }
             else

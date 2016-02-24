@@ -75,8 +75,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let gndSection = PCH_DiskSection(diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
         
         // Now we try again but split each coil into sections. 
-        let lvCoilSections = 4
-        let hvCoilSections = 4
+        // NOTE: To get this to work with SPICE, it is necessary to increase RELTOL to 0.025 (LTSpice)
+        let lvCoilSections = 16
+        let hvCoilSections = 60
         
         var coilSections = [PCH_DiskSection]()
         
@@ -236,6 +237,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if (section.data.serialNumber > currentSectionNumber)
                 {
                     M[currentSectionNumber, section.data.serialNumber] = mutInd
+                    // M[section.data.serialNumber, currentSectionNumber] = mutInd
                 }
             }
             
@@ -301,7 +303,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             */
             
-            DLog("Total Kip for this node: \(sumKip)")
+            // DLog("Total Kip for this node: \(sumKip)")
             
             // take care of the final node
             if (endNodes.contains(nextSection.data.nodes.outNode))
@@ -332,6 +334,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             prevSection = nextSection
         }
         
+        
+        
+        //let test = PCH_Matrix(sourceMatrix: M, newMatrixType: PCH_Matrix.types.generalMatrix)?.Inverse()
+        
         // DLog("C: \(Cbase)")
         // DLog("M: \(M)")
         // DLog("A: \(A)")
@@ -360,7 +366,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hvTopRow[hvNodeBase + hvCoilSections] = 1.0
         C.SetRow(hvNodeBase + hvCoilSections, buffer: hvTopRow)
         
-        DLog("Adjusted C: \(C)")
+        // DLog("Adjusted C: \(C)")
         
         // For the shot terminal, we use the old standard formula, V0 * (e^(-at) - e^(-bt)). The constants are k1 = 14400 and k2 = 3E6
         // The derivative of this function with respect to t is: dV/dt = V0 * (be^(-bt) - ae^(-at)).
@@ -375,30 +381,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Set the time step. For debugging, we're going somewhat coarse.
         let h = 10.0E-9
         // The overall time that the simulation will run
-        let maxTime = 20.0E-6
+        let maxTime = -1.0
         // The current time
         var simTime = 0.0
         
         while simTime <= maxTime
         {
-            // Set the right-size vectors:
-            // var BV = B * V
-            // var RI = R * I
             let AI = (A * I)!
             
             // We will start with the solution of dV/dt to set the V vector. We're going to use a fourth-order Runge-Kutta algorithm (plenty of websites, see http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html or http://www.myphysicslab.com/runge_kutta.html for details)
-            // first solution
-            // fix AI
+            
+            // Get the derivative dV/dt at the current simulation time. Note that in this case, the derivative is not actually a function of V. Therefore, the only thing we do is calculate the derivative of teh "shot terminal" according to the voltage formula we're using (at current time, current time + h/2, and current time + h, as required by 4th order Runge-Kutta), and set all the grounded node derivatives to zero.
+            
             AI[lvNodeBase, 0] = 0.0
             AI[lvCoilSections, 0] = 0.0
             AI[hvNodeBase, 0] = 0.0
             
-            // Get the derivative at the current simulation time. Note that in this case, the derivative is not actually a function of V. The only thing we do is calculate the derivative accoridng to the voltage formula we're using (at current time, current time + h/2, and current time + h, as required by 4th order Runge-Kutta).
             AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime)
             // DLog("AI: \(AI)")
             
             let an = C.SolveWith(AI)!
-            // DLog("an: \(an)")
+            // DLog("AI: \(AI)")
             
             AI[hvNodeBase + hvCoilSections, 0] = derivativeOfBIL(V0, t:simTime + h/2)
             // DLog("AI: \(AI)")
@@ -415,12 +418,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // DLog("Old V: \(V)")
             // DLog("New V: \(newV)")
             
-            var BV = (B * newV)!
-            var RI = (R * I)!
+            let BV = (B * newV)!
+            let RI = (R * I)!
             
             var rtSide = BV - RI
             
-            // The current derivative IS a function of I, so this is a more "traditional" calculation using Runge-Kutta.
+            // The current derivative dI/dt _is_ a function of I, so this is a more "traditional" calculation using Runge-Kutta.
             let aan = M.SolveWith(rtSide)!
             
             var newI = I + (h/2.0 * aan)
@@ -437,17 +440,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             newI = I + h/6.0 * (aan + 2.0 * bbn + 2.0 * ccn + ddn)
             
-            DLog("Old V: \(V)")
-            DLog("New V: \(newV)")
-            
-            DLog("Old I: \(I)")
-            DLog("New I: \(newI)")
-            
             I = newI
             V = newV
             simTime += h
         }
         
+        DLog("V: \(V)")
+        DLog("I: \(I)")
+        
+        // NSApplication.sharedApplication().terminate(self)
+
         // inductance check (debugging)
         // We have confirmed that the self-inductances are correct when comparing the value calculated with each coil as a whole with the value calculated from the individual disk self- and mutual-inductances. We now check the leakage inductance between the coils (from the HV point of view).
         /*
@@ -519,7 +521,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         */
         
-        NSApplication.sharedApplication().terminate(self)
         // return
         
         /*
@@ -575,7 +576,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let coilSections = [lv1,lv2,hv1,hv2]
 */
-        // SPICE-FILE STUFF FROM HERE ONE
+        // SPICE-FILE STUFF FROM HERE ON
         
         var fString = String()
         var mutSerNum = 1

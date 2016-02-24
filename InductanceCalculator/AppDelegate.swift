@@ -53,6 +53,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
 */
+        // Test FFT
+        var testArray = [Double](count: 8, repeatedValue: 0.0)
+        testArray[0] = 1.0
+        let fftTest = GetFFT(testArray)
+        
+        for i in 0..<8
+        {
+            DLog("FFT[\(i)]: \(fftTest[i])")
+        }
 
         
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)

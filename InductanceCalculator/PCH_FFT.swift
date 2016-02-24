@@ -40,6 +40,11 @@ func GetFFT(waveForm:[Double]) -> [Complex]
     // The result type for the FFT call is a structre called a "DSPDoubleSplitComplex", which is made up of two arrays, one for the real parts and one for the complex parts. We initialize both arrays to zero
     var fftResult = DSPDoubleSplitComplex(realp: UnsafeMutablePointer<Double>([Double](count: N, repeatedValue: 0.0)), imagp: UnsafeMutablePointer<Double>([Double](count: N, repeatedValue: 0.0)))
     
+    var tstResult = withUnsafePointer(&fftResult) {(pointer:UnsafePointer<DSPDoubleSplitComplex>) -> ([Complex]) in
+        
+            vDSP_ctozD(waveDC, 2, pointer, 1, vDSP_Length(N))
+        
+        }
     // Set the real values of the struct
     vDSP_ctozD(waveDC, 2, [fftResult], 1, vDSP_Length(N))
     

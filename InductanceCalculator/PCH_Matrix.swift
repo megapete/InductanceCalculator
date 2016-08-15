@@ -307,7 +307,7 @@ struct PCH_SubMatrix
 /**
     The xGETRF function for double-precision sparse matrices
 */
-func PCH_Sparse_dgetrf(A:PCH_SubMatrix) -> PCH_Matrix
+func PCH_Sparse_dgetrf(_ A:PCH_SubMatrix) -> PCH_Matrix
 {
     #if DEBUG
     // Only square matrices are allowed
@@ -412,7 +412,7 @@ func PCH_Sparse_dgetrf(A:PCH_SubMatrix) -> PCH_Matrix
 /**
     The xGEMM function for double-precision sparse matrices
 */
-func PCH_Sparse_dgemm(alpha alpha:__CLPK_doublereal, beta:__CLPK_doublereal, A:PCH_SubMatrix, B:PCH_SubMatrix, C:PCH_SubMatrix) -> PCH_Matrix
+func PCH_Sparse_dgemm(alpha:__CLPK_doublereal, beta:__CLPK_doublereal, A:PCH_SubMatrix, B:PCH_SubMatrix, C:PCH_SubMatrix) -> PCH_Matrix
 {
     // after testing, consider putting these ZAsserts into an "#if DEBUG" block
     
@@ -567,7 +567,7 @@ func PCH_Sparse_dgemm(alpha alpha:__CLPK_doublereal, beta:__CLPK_doublereal, A:P
 /** The xTRSM function for sparse matrices where the A argument is a lower triangular matrix (parameter L). This is for double-precision matrices
  
  */
-func PCH_Sparse_dtrsm(L L:PCH_SubMatrix, B:PCH_SubMatrix) -> PCH_Matrix
+func PCH_Sparse_dtrsm(L:PCH_SubMatrix, B:PCH_SubMatrix) -> PCH_Matrix
 {
     // See the more complete notes in the upper-triangular version of this function for more detailed explanantions of what's going on here.
     
@@ -709,7 +709,7 @@ func PCH_Sparse_dtrsm(L L:PCH_SubMatrix, B:PCH_SubMatrix) -> PCH_Matrix
 /** The xTRSM function for sparse matrices where the A argument is an upper triangular matrix (parameter U). This is for double-precision matrices
  
 */
-func PCH_Sparse_dtrsm(U U:PCH_SubMatrix, B:PCH_SubMatrix) -> PCH_Matrix
+func PCH_Sparse_dtrsm(U:PCH_SubMatrix, B:PCH_SubMatrix) -> PCH_Matrix
 {
     // after testing, consider putting these ZAsserts into an "#if DEBUG" block
     
@@ -1049,7 +1049,7 @@ class PCH_Matrix:CustomStringConvertible
                 
                 if (newValue == 0.0)
                 {
-                    self.sparseDoubleDict!.removeValueForKey(theKey)
+                    self.sparseDoubleDict!.removeValue(forKey: theKey)
                 }
                 else
                 {
@@ -1183,7 +1183,7 @@ class PCH_Matrix:CustomStringConvertible
                 
                 if (newValue.real == 0.0 && newValue.imag == 0.0)
                 {
-                    self.sparseComplexDict!.removeValueForKey(theKey)
+                    self.sparseComplexDict!.removeValue(forKey: theKey)
                 }
                 else
                 {
@@ -1343,11 +1343,11 @@ class PCH_Matrix:CustomStringConvertible
             
             if (matrixPrecision == precisions.doublePrecision)
             {
-                self.doubleBuffer = [__CLPK_doublereal](count: numElements, repeatedValue: 0.0)
+                self.doubleBuffer = [__CLPK_doublereal](repeating: 0.0, count: numElements)
             }
             else
             {
-                self.complexBuffer = [__CLPK_doublecomplex](count: numElements, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                self.complexBuffer = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: numElements)
             }
         }
     }
@@ -1856,7 +1856,7 @@ class PCH_Matrix:CustomStringConvertible
         - parameter: rowNum: The row that will be replaced by the passed-in buffer
         - parameter: buffer: The array of Doubles that will be used
     */
-    func SetRow(rowNum:Int, buffer:[Double])
+    func SetRow(_ rowNum:Int, buffer:[Double])
     {
         ZAssert(self.matrixPrecision == precisions.doublePrecision, message: "This function is for double-precision values")
         
@@ -1898,7 +1898,7 @@ class PCH_Matrix:CustomStringConvertible
      - note: If there are *less* entries in **colBuffer** than the number of rows in the matrix, the missing values will be padded with zeroes. If there are *more* entries in **colBuffer** than the number of rows in the matrix, then the extra entries are ignored.
      
     */
-    func AddColumn(colNum:Int, colBuffer:[Double])
+    func AddColumn(_ colNum:Int, colBuffer:[Double])
     {
         ZAssert(colNum >= 0 && colNum < self.numCols, message: "Illegal column number")
         
@@ -1934,7 +1934,7 @@ class PCH_Matrix:CustomStringConvertible
      - note: If there are *less* entries in **colBuffer** than the number of rows in the matrix, the missing values will be padded with zeroes. If there are *more* entries in **colBuffer** than the number of rows in the matrix, then the extra entries are ignored.
      
      */
-    func AddColumn(colNum:Int, colBuffer:[Complex])
+    func AddColumn(_ colNum:Int, colBuffer:[Complex])
     {
         ZAssert(colNum >= 0 && colNum < self.numCols, message: "Illegal column number")
         
@@ -1970,7 +1970,7 @@ class PCH_Matrix:CustomStringConvertible
         - note: If there are *less* entries in **rowBuffer** than the number of columns in the matrix, the missing values will be padded with zeroes. If there are *more* entries in **rowBuffer** than the number of columns in the matrix, then the extra entries are ignored.
      
     */
-    func AddRow(rowNum:Int, rowBuffer:[Double])
+    func AddRow(_ rowNum:Int, rowBuffer:[Double])
     {
         ZAssert(rowNum >= 0 && rowNum < self.numRows, message: "Illegal row number")
         
@@ -2006,7 +2006,7 @@ class PCH_Matrix:CustomStringConvertible
      - note: If there are *less* entries in **rowBuffer** than the number of columns in the matrix, the missing values will be padded with zeroes. If there are *more* entries in **rowBuffer** than the number of columns in the matrix, then the extra entries are ignored.
      
      */
-    func AddRow(rowNum:Int, rowBuffer:[Complex])
+    func AddRow(_ rowNum:Int, rowBuffer:[Complex])
     {
         ZAssert(rowNum >= 0 && rowNum < self.numRows, message: "Illegal row number")
         
@@ -2042,7 +2042,7 @@ class PCH_Matrix:CustomStringConvertible
         - parameter: toCol: The last column to include in the submatrix
         - parameter: convertToGE: A flag that indicates that the returned matrix should be first converted to a general matrix.
     */
-    func Submatrix(fromRow fromRow:Int, toRow:Int, fromCol:Int, toCol:Int, convertToGE:Bool = true) -> PCH_Matrix
+    func Submatrix(fromRow:Int, toRow:Int, fromCol:Int, toCol:Int, convertToGE:Bool = true) -> PCH_Matrix
     {
         ZAssert(fromRow >= 0 && toRow < self.numRows && fromRow <= toRow  && fromCol >= 0 && toCol < self.numCols && fromCol <= toCol, message: "Illegal index")
         
@@ -2141,24 +2141,24 @@ class PCH_Matrix:CustomStringConvertible
                 var Am = self.doubleBuffer!
                 var lda = n
                 
-                var wr = [__CLPK_doublereal](count: self.numRows, repeatedValue: 0.0)
-                var wi = [__CLPK_doublereal](count: self.numRows, repeatedValue: 0.0)
+                var wr = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
+                var wi = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
                 
                 // The vl and vr arrays are used for eigenvectors (not implemented at this point)
-                var vl = [__CLPK_doublereal](count: self.numRows, repeatedValue: 0.0)
+                var vl = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
                 var ldvl = __CLPK_integer(n)
                 
-                var vr = [__CLPK_doublereal](count: self.numRows, repeatedValue: 0.0)
+                var vr = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
                 var ldvr = __CLPK_integer(n)
                 
-                var optWork = [__CLPK_doublereal](count: 1, repeatedValue: 0.0)
+                var optWork = [__CLPK_doublereal](repeating: 0.0, count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
                 
                 var info = __CLPK_integer(0)
                 
                 dgeev_(&jobvl, &jobvr, &n, &Am, &lda, &wr, &wi, &vl, &ldvl, &vr, &ldvr, &optWork, &lWork, &info)
                 
-                var actualWork = [__CLPK_doublereal](count: Int(optWork[0]), repeatedValue: 0.0)
+                var actualWork = [__CLPK_doublereal](repeating: 0.0, count: Int(optWork[0]))
                 lWork = __CLPK_integer(optWork[0])
                 
                 dgeev_(&jobvl, &jobvr, &n, &Am, &lda, &wr, &wi, &vl, &ldvl, &vr, &ldvr, &actualWork, &lWork, &info)
@@ -2184,24 +2184,24 @@ class PCH_Matrix:CustomStringConvertible
                 var Am = self.complexBuffer!
                 var lda = n
                 
-                var w = [__CLPK_doublecomplex](count: self.numRows, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var w = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows)
                 
                 // The vl and vr arrays are used for eigenvectors (not implemented at this point)
-                var vl = [__CLPK_doublecomplex](count: self.numRows, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var vl = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows)
                 var ldvl = __CLPK_integer(n)
                 
-                var vr = [__CLPK_doublecomplex](count: self.numRows, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var vr = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows)
                 var ldvr = __CLPK_integer(n)
                 
-                var optWork = [__CLPK_doublecomplex](count: 1, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var optWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
-                var rWork = [__CLPK_doublereal](count: 2 * self.numRows, repeatedValue: 0.0)
+                var rWork = [__CLPK_doublereal](repeating: 0.0, count: 2 * self.numRows)
                 
                 var info = __CLPK_integer(0)
                 
                 zgeev_(&jobvl, &jobvr, &n, &Am, &lda, &w, &vl, &ldvl, &vr, &ldvr, &optWork, &lWork, &rWork, &info)
                 
-                var actualWork = [__CLPK_doublecomplex](count: Int(optWork[0].r), repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var actualWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: Int(optWork[0].r))
                 lWork = __CLPK_integer(optWork[0].r)
                 
                 zgeev_(&jobvl, &jobvr, &n, &Am, &lda, &w, &vl, &ldvl, &vr, &ldvr, &actualWork, &lWork, &rWork, &info)
@@ -2237,7 +2237,7 @@ class PCH_Matrix:CustomStringConvertible
         var m:__CLPK_integer = __CLPK_integer(self.numRows)
         var n:__CLPK_integer = __CLPK_integer(self.numCols)
         var lda = m
-        var ipiv = [__CLPK_integer](count: min(self.numRows, self.numCols), repeatedValue: 0)
+        var ipiv = [__CLPK_integer](repeating: 0, count: min(self.numRows, self.numCols))
         var info:__CLPK_integer = 0
         
         if (self.matrixType == types.generalMatrix)
@@ -2258,12 +2258,12 @@ class PCH_Matrix:CustomStringConvertible
                 
                 n = __CLPK_integer(self.numCols)
                 lda = n
-                var optWork = [__CLPK_doublereal](count: 1, repeatedValue: 0.0)
+                var optWork = [__CLPK_doublereal](repeating: 0.0, count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
                 
                 dgetri_(&n, &A, &lda, &ipiv, &optWork, &lWork, &info)
                 
-                var actualWork = [__CLPK_doublereal](count: Int(optWork[0]), repeatedValue: 0.0)
+                var actualWork = [__CLPK_doublereal](repeating: 0.0, count: Int(optWork[0]))
                 lWork = n // this can be optimized (see netlib)
                 
                 dgetri_(&n, &A, &lda, &ipiv, &actualWork, &lWork, &info)
@@ -2293,12 +2293,12 @@ class PCH_Matrix:CustomStringConvertible
                 
                 n = __CLPK_integer(self.numCols)
                 lda = n
-                var optWork = [__CLPK_doublecomplex](count: 1, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var optWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
                 
                 zgetri_(&n, &A, &lda, &ipiv, &optWork, &lWork, &info)
                 
-                var actualWork = [__CLPK_doublecomplex](count: Int(optWork[0].r), repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var actualWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: Int(optWork[0].r))
                 
                 lWork = n // this can be optimized (see netlib)
                 
@@ -2331,7 +2331,7 @@ class PCH_Matrix:CustomStringConvertible
         
         - returns: The B matrix (same type as self (A))
     */
-    func AddSubtract(X:PCH_Matrix, isAdd:Bool = true) -> PCH_Matrix
+    func AddSubtract(_ X:PCH_Matrix, isAdd:Bool = true) -> PCH_Matrix
     {
         ZAssert(self.numRows == X.numRows && self.numCols == X.numCols, message: "A and X matrices must have identical dimensions!")
         ZAssert(self.matrixPrecision == X.matrixPrecision, message: "Both matrices must be of the same precision")
@@ -2365,7 +2365,7 @@ class PCH_Matrix:CustomStringConvertible
      
         - returns: The B matrix (always a general matrix, except if A and X are both diagonal, in which case B is also diagonal)
     */
-    func MultiplyBy(X:PCH_Matrix) -> PCH_Matrix?
+    func MultiplyBy(_ X:PCH_Matrix) -> PCH_Matrix?
     {
         ZAssert(self.numCols == X.numRows, message: "A-matrix numCols must be equal to X-matrix numRows")
         ZAssert(self.matrixPrecision == X.matrixPrecision, message: "Both matrices must be of the same precision")
@@ -2382,7 +2382,7 @@ class PCH_Matrix:CustomStringConvertible
         {
             if (self.matrixPrecision == precisions.doublePrecision)
             {
-                var B = [__CLPK_doublereal](count: Int(ldc * n), repeatedValue: 0.0)
+                var B = [__CLPK_doublereal](repeating: 0.0, count: Int(ldc * n))
                 var Abuf = self.doubleBuffer!
                 var Xbuf = X.doubleBuffer!
                 
@@ -2399,7 +2399,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var B = [__CLPK_doublecomplex](count: Int(ldc * n), repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var B = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: Int(ldc * n))
                 var Abuf = self.complexBuffer!
                 var Xbuf = X.complexBuffer!
                 
@@ -2422,7 +2422,7 @@ class PCH_Matrix:CustomStringConvertible
         {
             if (self.matrixPrecision == precisions.doublePrecision)
             {
-                var B = [__CLPK_doublereal](count: self.numRows * X.numCols, repeatedValue: 0.0)
+                var B = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * X.numCols)
                 
                 for nextRow in 0..<self.numRows
                 {
@@ -2436,7 +2436,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var B = [__CLPK_doublecomplex](count: self.numRows * X.numCols, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var B = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows * X.numCols)
                 
                 for nextRow in 0..<self.numRows
                 {
@@ -2457,7 +2457,7 @@ class PCH_Matrix:CustomStringConvertible
         {
             if (self.matrixPrecision == precisions.doublePrecision)
             {
-                var B = [__CLPK_doublereal](count: self.numRows * X.numCols, repeatedValue: 0.0)
+                var B = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * X.numCols)
                 
                 for nextRow in 0..<self.numRows
                 {
@@ -2471,7 +2471,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var B = [__CLPK_doublecomplex](count: self.numRows * X.numCols, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var B = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows * X.numCols)
                 
                 for nextRow in 0..<self.numRows
                 {
@@ -2492,7 +2492,7 @@ class PCH_Matrix:CustomStringConvertible
         {
             if (self.matrixPrecision == precisions.doublePrecision)
             {
-                var B = [__CLPK_doublereal](count: self.numRows, repeatedValue: 0.0)
+                var B = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
                 
                 for nextVal in 0..<self.numRows
                 {
@@ -2503,7 +2503,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var B = [__CLPK_doublecomplex](count: self.numRows, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var B = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows)
                 
                 for nextVal in 0..<self.numRows
                 {
@@ -2532,7 +2532,7 @@ class PCH_Matrix:CustomStringConvertible
      
         - returns: The solution matrix X, or nil if the system could not be solved.
     */
-    func SolveWith(B:PCH_Matrix) -> PCH_Matrix?
+    func SolveWith(_ B:PCH_Matrix) -> PCH_Matrix?
     {
         // NOTE: At this time, only "simple drivers" are implemented (ie: no equilibrium or conditioning). This may change at some point.
         
@@ -2561,7 +2561,7 @@ class PCH_Matrix:CustomStringConvertible
                 var nrhs = __CLPK_integer(B.numCols)
                 var lda = n
                 var ldb = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var info:__CLPK_integer = 0
                 
                 dgesv_(&n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &info)
@@ -2584,7 +2584,7 @@ class PCH_Matrix:CustomStringConvertible
                 var nrhs = __CLPK_integer(B.numCols)
                 var lda = n
                 var ldb = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var info:__CLPK_integer = 0
                 
                 zgesv_(&n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &info)
@@ -2612,7 +2612,7 @@ class PCH_Matrix:CustomStringConvertible
                 var ku = __CLPK_integer(self.superDiagonals)
                 var ldab = 2 * kl + ku + 1
                 var ldb = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var info:__CLPK_integer = 0
                 
                 dgbsv_(&n, &kl, &ku, &nrhs, &Am, &ldab, &ipiv, &Bm, &ldb, &info)
@@ -2637,7 +2637,7 @@ class PCH_Matrix:CustomStringConvertible
                 var ku = __CLPK_integer(self.superDiagonals)
                 var ldab = 2 * kl + ku + 1
                 var ldb = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var info:__CLPK_integer = 0
                 
                 zgbsv_(&n, &kl, &ku, &nrhs, &Am, &ldab, &ipiv, &Bm, &ldb, &info)
@@ -2661,7 +2661,7 @@ class PCH_Matrix:CustomStringConvertible
             {
                 // This is a bit weird because the buffer in self is in packed form, but the buffer we need to pass to the solving routine is not (presumably it needs the space to carry out the function). 
                 
-                var Am = [__CLPK_doublereal](count: self.numRows * self.numCols, repeatedValue: 0.0)
+                var Am = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * self.numCols)
                 
                 for col in 0..<self.numCols
                 {
@@ -2677,12 +2677,12 @@ class PCH_Matrix:CustomStringConvertible
                 var n = __CLPK_integer(self.numRows)
                 var nrhs = __CLPK_integer(B.numCols)
                 var lda = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var Bm = B.doubleBuffer!
                 var ldb = n
                 var info = __CLPK_integer(0)
                 
-                var optWork = [__CLPK_doublereal](count: 1, repeatedValue: 0.0)
+                var optWork = [__CLPK_doublereal](repeating: 0.0, count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
                 
                 dsysv_(&uplo, &n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &optWork, &lWork, &info)
@@ -2695,7 +2695,7 @@ class PCH_Matrix:CustomStringConvertible
                 }
 
                 lWork = __CLPK_integer(optWork[0])
-                var actualWork = [__CLPK_doublereal](count: Int(lWork), repeatedValue: 0.0)
+                var actualWork = [__CLPK_doublereal](repeating: 0.0, count: Int(lWork))
                 
                 // dgesv_(&n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &info)
                 dsysv_(&uplo, &n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &actualWork, &lWork, &info)
@@ -2712,7 +2712,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var Am = [__CLPK_doublecomplex](count: self.numRows * self.numCols, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var Am = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows * self.numCols)
                 
                 for col in 0..<self.numCols
                 {
@@ -2727,18 +2727,18 @@ class PCH_Matrix:CustomStringConvertible
                 var n = __CLPK_integer(self.numRows)
                 var nrhs = __CLPK_integer(B.numCols)
                 var lda = n
-                var ipiv = [__CLPK_integer](count: self.numRows, repeatedValue: 0)
+                var ipiv = [__CLPK_integer](repeating: 0, count: self.numRows)
                 var Bm = B.complexBuffer!
                 var ldb = n
                 var info = __CLPK_integer(0)
                 
-                var optWork = [__CLPK_doublecomplex](count: 1, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var optWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: 1)
                 var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
                 
                 zsysv_(&uplo, &n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &optWork, &lWork, &info)
                 
                 lWork = __CLPK_integer(optWork[0].r)
-                var actualWork = [__CLPK_doublecomplex](count: Int(optWork[0].r), repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var actualWork = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: Int(optWork[0].r))
                 
                 zsysv_(&uplo, &n, &nrhs, &Am, &lda, &ipiv, &Bm, &ldb, &actualWork, &lWork, &info)
                 
@@ -2757,7 +2757,7 @@ class PCH_Matrix:CustomStringConvertible
             if (self.matrixPrecision == precisions.doublePrecision)
             {
                 // we need to create a full-sized buffer, the same as for symmetric matrices (see the note above)
-                var Am = [__CLPK_doublereal](count: self.numRows * self.numCols, repeatedValue: 0.0)
+                var Am = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * self.numCols)
                 
                 for col in 0..<self.numCols
                 {
@@ -2779,21 +2779,21 @@ class PCH_Matrix:CustomStringConvertible
                 var ldb = n
                 var info = __CLPK_integer(0)
                 
-                var AF = [__CLPK_doublereal](count: self.numRows * self.numCols, repeatedValue: 0.0)
+                var AF = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * self.numCols)
                 var ldaf = n
                 var equed:Int8 = 0
-                var S = [__CLPK_doublereal](count:self.numRows, repeatedValue:0.0)
+                var S = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
                 
-                var X = [__CLPK_doublereal](count:self.numRows * B.numCols, repeatedValue:0.0)
+                var X = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * B.numCols)
                 var ldx = n
                 
                 var rcond:__CLPK_doublereal = 0.0
                 
-                var ferr = [__CLPK_doublereal](count:B.numCols, repeatedValue:0.0)
-                var berr = [__CLPK_doublereal](count:B.numCols, repeatedValue:0.0)
+                var ferr = [__CLPK_doublereal](repeating: 0.0, count: B.numCols)
+                var berr = [__CLPK_doublereal](repeating: 0.0, count: B.numCols)
                 
-                var work = [__CLPK_doublereal](count:3 * self.numRows, repeatedValue:0.0)
-                var iwork = [__CLPK_integer](count: self.numRows, repeatedValue: __CLPK_integer(0))
+                var work = [__CLPK_doublereal](repeating: 0.0, count: 3 * self.numRows)
+                var iwork = [__CLPK_integer](repeating: __CLPK_integer(0), count: self.numRows)
                 
                 dposvx_(&fact, &uplo, &n, &nrhs, &Am, &lda, &AF, &ldaf, &equed, &S, &Bm, &ldb, &X, &ldx, &rcond, &ferr, &berr, &work, &iwork, &info)
                 
@@ -2823,7 +2823,7 @@ class PCH_Matrix:CustomStringConvertible
             }
             else
             {
-                var Am = [__CLPK_doublecomplex](count: self.numRows * self.numCols, repeatedValue: __CLPK_doublecomplex(r: 0.0, i: 0.0))
+                var Am = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0.0, i: 0.0), count: self.numRows * self.numCols)
                 
                 for col in 0..<self.numCols
                 {

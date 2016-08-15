@@ -10,17 +10,17 @@
 
 import Foundation
 
-func IntegralOf_tL1_from0_to(b:Double) -> Double
+func IntegralOf_tL1_from0_to(_ b:Double) -> Double
 {
     return (-b * M0(b)) - (b * b / π) + IntegralOf_M0_from0_to(b) + IntegralOf_tI1_from0_to(b)
 }
 
-func IntegralOf_tL1_from(a:Double, toB:Double) -> Double
+func IntegralOf_tL1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tL1_from0_to(toB) - IntegralOf_tL1_from0_to(a)
 }
 
-func IntegralOf_tI1_from0_to(b:Double) -> Double
+func IntegralOf_tI1_from0_to(_ b:Double) -> Double
 {
     // Alternate method from BlueBook 2nd Ed., page 267
     let Ri0 = gsl_sf_bessel_I0_scaled(b)
@@ -30,12 +30,12 @@ func IntegralOf_tI1_from0_to(b:Double) -> Double
     return (π / 2.0) * b * eBase * (M1(b) * Ri0 - M0(b) * Ri1)
 }
 
-func IntegralOf_tI1_from(a:Double, toB:Double) -> Double
+func IntegralOf_tI1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tI1_from0_to(toB) - IntegralOf_tI1_from0_to(a)
 }
 
-func IntegralOf_tK1_from0_to(b:Double) -> Double
+func IntegralOf_tK1_from0_to(_ b:Double) -> Double
 {
     // Alternate method from BlueBook 2nd Ed., page 267
     let Rk0 = gsl_sf_bessel_K0_scaled(b)
@@ -45,7 +45,7 @@ func IntegralOf_tK1_from0_to(b:Double) -> Double
     return (π / 2.0) * (1.0 - b * eBase * (M1(b) * Rk0 + M0(b) * Rk1))
 }
 
-func IntegralOf_tK1_from(a:Double, toB:Double) -> Double
+func IntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tK1_from0_to(toB) - IntegralOf_tK1_from0_to(a)
 }
@@ -62,16 +62,16 @@ func L1(x:Double) -> Double
 }
 */
 
-func M0X_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+func M0X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
 {
     // first we have to convert the params pointer to a Double
     let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = dpParams.memory
+    let x:Double = dpParams.pointee
     
     return exp(-x * cos(theta))
 }
 
-func M0(x:Double) -> Double
+func M0(_ x:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0
@@ -92,17 +92,17 @@ func M0(x:Double) -> Double
     return result * 2.0 / π
 }
 
-func M1X_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+func M1X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
     {
     // first we have to convert the params pointer to a Double
     let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = dpParams.memory
+    let x:Double = dpParams.pointee
     
     return exp(-x * cos(theta)) * cos(theta)
 }
 
 
-func M1(x:Double) -> Double
+func M1(_ x:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0
@@ -123,16 +123,16 @@ func M1(x:Double) -> Double
     return (1.0 - result) * 2.0 / π
 }
 
-func IntM0T_integrand(theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+func IntM0T_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
 {
     // first we have to convert the params pointer to a Double
     let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = dpParams.memory
+    let x:Double = dpParams.pointee
 
     return (1.0 - exp(-x * cos(theta))) / cos(theta)
 }
 
-func IntegralOf_M0_from0_to(b:Double) -> Double
+func IntegralOf_M0_from0_to(_ b:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0

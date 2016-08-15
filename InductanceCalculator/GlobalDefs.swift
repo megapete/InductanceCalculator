@@ -24,7 +24,7 @@ let ε0:Double = 1 / (µ0 * c * c) // Farads/m
 let G:Double = 0.915965594177219015054603514932384110774
 
 /// Exponential function (this is basically an alias to make it easier to copy formulae)
-func e(arg:Double) -> Double
+func e(_ arg:Double) -> Double
 {
     return exp(arg)
 }

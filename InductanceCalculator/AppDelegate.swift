@@ -14,7 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var window: NSWindow!
 
 
-    func applicationDidFinishLaunching(aNotification: NSNotification) {
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
         
         /*
@@ -54,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
 */
         // Test FFT
-        var testArray = [Double](count: 8, repeatedValue: 0.0)
+        var testArray = [Double](repeating: 0.0, count: 8)
         testArray[0] = 1.0
         let fftTest = GetFFT(testArray)
         
@@ -107,14 +107,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var sectionSerialNumber = 0
         var nodeSerialNumber = 0
         
-        for var i=0; i<lvCoilSections; i++
+        for i in 0 ..< lvCoilSections
         {
             let nextSectionRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, CGFloat(lvZ), 0.296 * 25.4/1000.0, CGFloat(lvZStep))
             
             var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", lvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
             
-            sectionSerialNumber++
-            nodeSerialNumber++
+            sectionSerialNumber += 1
+            nodeSerialNumber += 1
             
             nextSectionData.resistance = lvResPerSection
             nextSectionData.seriesCapacitance = lvSerCapPerSection
@@ -131,7 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             lvZ += lvZStep
         }
         
-        nodeSerialNumber++
+        nodeSerialNumber += 1
         // And now the HV
         var hvZ = 2.75 * 25.4/1000.0
         let hvZStep = 32.495 / Double(hvCoilSections) * 25.4/1000
@@ -144,13 +144,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hvShuntCapPerSection = (6.5814E-12 + 1.0259E-22) * hvSections
         
         var hvSectionArray = [PCH_DiskSection]()
-        for var i=0; i<hvCoilSections; i++
+        for i in 0 ..< hvCoilSections
         {
             let nextSectionRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, CGFloat(hvZ), 5.148 * 25.4/1000.0, CGFloat(hvZStep))
             
             var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", hvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
-            sectionSerialNumber++
-            nodeSerialNumber++
+            sectionSerialNumber += 1
+            nodeSerialNumber += 1
             
             nextSectionData.resistance = hvResPerSection
             nextSectionData.seriesCapacitance = hvSerCapPerSection
@@ -174,7 +174,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("Calculating mutual inductances")
         while cArray.count > 0
         {
-            let nDisk = cArray.removeAtIndex(0)
+            let nDisk = cArray.remove(at: 0)
             
             for otherDisk in cArray
             {
@@ -359,19 +359,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // We set the grounded nodes so that dV/dt at that node is zero. To do that, we set the row of the node 'i' to all zeros, except entry [i,i], which we set to 1. We will then set the i-th row in the vector AI to 0 below. We also do the same thing for the "shot" node, except that its derivative will be calculated at each time step.
         
-        var lvBottomRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        var lvBottomRow = [Double](repeating: 0.0, count: C.numCols)
         lvBottomRow[lvNodeBase] = 1.0
         C.SetRow(lvNodeBase, buffer: lvBottomRow)
         
-        var lvTopRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        var lvTopRow = [Double](repeating: 0.0, count: C.numCols)
         lvTopRow[lvCoilSections] = 1.0
         C.SetRow(lvCoilSections, buffer: lvTopRow)
         
-        var hvBottomRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        var hvBottomRow = [Double](repeating: 0.0, count: C.numCols)
         hvBottomRow[hvNodeBase] = 1.0
         C.SetRow(hvNodeBase, buffer: hvBottomRow)
         
-        var hvTopRow = [Double](count: C.numCols, repeatedValue: 0.0)
+        var hvTopRow = [Double](repeating: 0.0, count: C.numCols)
         hvTopRow[hvNodeBase + hvCoilSections] = 1.0
         C.SetRow(hvNodeBase + hvCoilSections, buffer: hvTopRow)
         
@@ -599,8 +599,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let nextSectionID = nextDisk.data.sectionID
             dSections.append(nextSectionID)
             
-            let coilName = nextSectionID[nextSectionID.startIndex.advancedBy(0)...nextSectionID.startIndex.advancedBy(1)]
-            let diskNum = nextSectionID[nextSectionID.startIndex.advancedBy(2)..<nextSectionID.endIndex]
+            let coilName = nextSectionID[nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 0)...nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 1)]
+            let diskNum = nextSectionID[nextSectionID.indices.suffix(from: nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 2))]
             let nextDiskNum = String(format: "%03d", Int(diskNum)! + 1)
             
             let inNode = coilName + "I" + diskNum
@@ -639,14 +639,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 else
                 {
-                    shuntNode = shuntID[shuntID.startIndex.advancedBy(0)...shuntID.startIndex.advancedBy(1)]
+                    shuntNode = shuntID[shuntID.characters.index(shuntID.startIndex, offsetBy: 0)...shuntID.characters.index(shuntID.startIndex, offsetBy: 1)]
                     shuntNode += "I"
-                    shuntNode += shuntID[shuntID.startIndex.advancedBy(2)...shuntID.endIndex]
+                    shuntNode += shuntID[shuntID.characters.index(shuntID.startIndex, offsetBy: 2)...shuntID.endIndex]
                 }
                 
                 fString += nsName + " " + inNode + " " + shuntNode + String(format: " %.4E\n", nextShuntCap.1)
                 
-                shuntCapSerialNum++
+                shuntCapSerialNum += 1
             }
             
             for nextMutualInd in nextDisk.data.mutIndCoeff
@@ -662,7 +662,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 fString += miName + " " + selfIndName + " L" + miID + String(format: " %.4E\n", nextMutualInd.1)
                 
-                mutSerNum++
+                mutSerNum += 1
             }
         }
         
@@ -914,7 +914,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 */*/
     }
     
-    func derivativeOfBIL(V:Double, t:Double) -> Double
+    func derivativeOfBIL(_ V:Double, t:Double) -> Double
     {
         let k1 = 14285.0
         let k2 = 3.333333E6
@@ -923,7 +923,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
     }
     
-    func saveFileWithString(fileString:String)
+    func saveFileWithString(_ fileString:String)
     {
         let saveFilePanel = NSSavePanel()
         
@@ -934,7 +934,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if (saveFilePanel.runModal() == NSFileHandlingPanelOKButton)
         {
-            guard let newFileURL = saveFilePanel.URL
+            guard let newFileURL = saveFilePanel.url
                 else
             {
                 DLog("Bad file name")
@@ -942,7 +942,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             
             do {
-                try fileString.writeToURL(newFileURL, atomically: true, encoding: NSUTF8StringEncoding)
+                try fileString.write(to: newFileURL, atomically: true, encoding: String.Encoding.utf8)
             }
             catch {
                 ALog("Could not write file!")
@@ -953,7 +953,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
     }
     
-    func applicationWillTerminate(aNotification: NSNotification) {
+    func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
     }
 

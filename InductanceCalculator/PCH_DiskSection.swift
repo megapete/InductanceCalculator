@@ -69,7 +69,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Jn
-    func J(n:Int) -> Double
+    func J(_ n:Int) -> Double
     {
         let useWindht = self.windHtFactor * self.windHt
         // let useOriginY = (useWindht - self.windHt) / 2.0 + Double(self.diskRect.origin.y)
@@ -79,7 +79,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Cn
-    func C(n:Int) -> Double
+    func C(_ n:Int) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = Double(n) * π / useWindht
@@ -91,7 +91,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Dn
-    func D(n:Int) -> Double
+    func D(_ n:Int) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let xc = (Double(n) * π / useWindht) * self.coreRadius
@@ -113,7 +113,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function En
-    func E(n:Int) -> Double
+    func E(_ n:Int) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let x2 = (Double(n) * π / useWindht) * Double(self.diskRect.origin.x + self.diskRect.size.width)
@@ -122,7 +122,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Fn
-    func F(n:Int) -> Double
+    func F(_ n:Int) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = (Double(n) * π / useWindht)
@@ -140,7 +140,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Gn
-    func G(n:Int) -> Double
+    func G(_ n:Int) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = (Double(n) * π / useWindht)
@@ -173,11 +173,11 @@ class PCH_DiskSection:Hashable {
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
         let convergenceIterations = 200
-        let loopQueue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
-        var currVal = [Double](count: convergenceIterations, repeatedValue: 0.0)
+        let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
+        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         // for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
-        dispatch_apply(convergenceIterations, loopQueue)
+        DispatchQueue.concurrentPerform(iterations: convergenceIterations)
         {
             (i:Int) -> Void in // this is the way to specify one of those "dangling" closures
                 
@@ -192,13 +192,13 @@ class PCH_DiskSection:Hashable {
         }
         
         // cool way to get the sum of the values in an array
-        result += currVal.reduce(0.0, combine: +)
+        result += currVal.reduce(0.0, +)
         
         return result
     }
     
     /// Rabins' methods for mutual inductances
-    func MutualInductanceTo(otherDisk:PCH_DiskSection) -> Double
+    func MutualInductanceTo(_ otherDisk:PCH_DiskSection) -> Double
     {
         /// If the inner radii of the two sections differ by less than 1mm, we assume that they are in the same radial position
         let isSameRadialPosition = fabs(Double(self.diskRect.origin.x - otherDisk.diskRect.origin.x)) <= 0.001
@@ -232,11 +232,11 @@ class PCH_DiskSection:Hashable {
         // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
         let convergenceIterations = 200
-        let loopQueue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
-        var currVal = [Double](count: convergenceIterations, repeatedValue: 0.0)
+        let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
+        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         // for i in 0..<convergenceIterations
-        dispatch_apply(convergenceIterations, loopQueue)
+        DispatchQueue.concurrentPerform(iterations: convergenceIterations)
         {
             (i:Int) -> Void in // this is the way to specify one of those "dangling" closures
             
@@ -264,7 +264,7 @@ class PCH_DiskSection:Hashable {
         }
         
         // cool way to get the sum of the values in an array
-        result += currVal.reduce(0.0, combine: +)
+        result += currVal.reduce(0.0, +)
         
         return result
     }

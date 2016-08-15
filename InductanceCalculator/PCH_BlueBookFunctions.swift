@@ -62,10 +62,10 @@ func L1(x:Double) -> Double
 }
 */
 
-func M0X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+func M0X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>?) -> Double!
 {
     // first we have to convert the params pointer to a Double
-    let dpParams = UnsafeMutablePointer<Double>(params)
+    let dpParams = UnsafeMutablePointer<Double>(params!)
     let x:Double = dpParams.pointee
     
     return exp(-x * cos(theta))

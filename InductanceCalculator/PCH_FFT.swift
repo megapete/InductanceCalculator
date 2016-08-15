@@ -21,5 +21,5 @@ func GetFFT(_ waveForm:[Double]) -> [Complex]
     let arrayN = waveForm.count
     
     
-    
+    return [Complex(real: 0,imag: 0)]
 }

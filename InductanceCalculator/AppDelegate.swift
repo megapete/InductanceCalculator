@@ -54,6 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
 */
         // Test FFT
+        /*
         var testArray = [Double](repeating: 0.0, count: 8)
         testArray[0] = 1.0
         let fftTest = GetFFT(testArray)
@@ -62,7 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         {
             DLog("FFT[\(i)]: \(fftTest[i])")
         }
-
+        */
         
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
         let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
@@ -88,10 +89,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let lvCoilSections = 16
         let hvCoilSections = 60
         
-        var coilSections = [PCH_DiskSection]()
+        // New stuff (to make things more "general"
         
         // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
         let resFactor = 3000.0
+        // Set the index numbers for the three coils we'll be modelling
+        let lvCoil = 0
+        let hvCoil = 1
+        let rvCoil = 2
+        
+        let numCoils = 3
+        
+        let numCoilSections = [98, 66, 80]
+        let useNumCoilSections = [98, 66, 80]
+        
+        let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
+        let zStep = [50.944 / Double(useNumCoilSections[lvCoil]) * 25.4/1000.0, 51.055 / Double(useNumCoilSections[hvCoil]) * 25.4/1000.0, 40.465 / Double(useNumCoilSections[rvCoil]) * 25.4/1000.0]
+        let Irms = [113.636, 72.169, 36.084]
+        let N = [numCoilSections[lvCoil] / useNumCoilSections[lvCoil], numCoilSections[hvCoil] / useNumCoilSections[hvCoil], numCoilSections[rvCoil] / useNumCoilSections[rvCoil]]
+        let innerRadius = [22.676 / 2.0 * 25.4/1000.0, 31.582 / 2.0 * 25.4/1000.0, 41.802 / 2.0 * 25.4/1000.0]
+        let identification = ["LV", "HV", "RV"]
+        let resistancePerSection = [4.392E-3 * Double(N[lvCoil]) * resFactor, 2.062E-2 * Double(N[hvCoil]) * resFactor, 8.117E-3 * Double(N[rvCoil]) * resFactor]
+        
+        var coilSections = [PCH_DiskSection]()
+        
+        
         
         var lvSectionArray = [PCH_DiskSection]()
         // do the lv first

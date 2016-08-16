@@ -207,7 +207,7 @@ struct sparseKeyType:Hashable
     
     // I found this hash function somewhere on the net
     internal var hashValue: Int {
-        return self.row.hashValue << sizeof(Int) ^ self.col.hashValue
+        return self.row.hashValue << MemoryLayout<Int>.size ^ self.col.hashValue
     }
 }
 
@@ -908,14 +908,14 @@ class PCH_Matrix:CustomStringConvertible
     let matrixType:types
     
     /// The buffer for doublePrecision matrices
-    private var doubleBuffer:[__CLPK_doublereal]? = nil
+    var doubleBuffer:[__CLPK_doublereal]? = nil
     
     /// The buffer for doubleComplex matrices
-    private var complexBuffer:[__CLPK_doublecomplex]? = nil
+    var complexBuffer:[__CLPK_doublecomplex]? = nil
     
     /// The dictionaries for sparse matrices. These represent the original sparse matrix, which may or may not be triangular. Sparse matrix solving is actually done on a triangular matrix that is "similar" to the original.
-    private var sparseDoubleDict:[sparseKeyType:Double]? = nil
-    private var sparseComplexDict:[sparseKeyType:Complex]? = nil
+    var sparseDoubleDict:[sparseKeyType:Double]? = nil
+    var sparseComplexDict:[sparseKeyType:Complex]? = nil
     
     /// The number of sub- and super-diagonals for banded matrices
     private let subDiagonals:Int

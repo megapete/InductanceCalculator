@@ -62,14 +62,19 @@ func L1(x:Double) -> Double
 }
 */
 
-func M0X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>?) -> Double!
+
+/*
+func M0X_integrand(_ theta:Double, params:UnsafeMutableRawPointer?) -> Double!
 {
+    
+    
     // first we have to convert the params pointer to a Double
-    let dpParams = UnsafeMutablePointer<Double>(params!)
-    let x:Double = dpParams.pointee
+    let dpParams = UnsafeMutablePointer<Double>(params)
+    let x:Double = params.pointee
     
     return exp(-x * cos(theta))
 }
+ */
 
 func M0(_ x:Double) -> Double
 {
@@ -79,7 +84,24 @@ func M0(_ x:Double) -> Double
     
     var params = x
     
-    var integrand:gsl_function = gsl_function(function: M0X_integrand, params: &params)
+    //var tst = gsl_function(function: <#T##((Double, UnsafeMutableRawPointer?) -> Double)!##((Double, UnsafeMutableRawPointer?) -> Double)!##(Double, UnsafeMutableRawPointer?) -> Double#>, params: <#T##UnsafeMutableRawPointer!#>)
+    
+    var integrand:gsl_function = gsl_function(function: {(theta:Double, p:UnsafeMutableRawPointer?) -> Double in
+        
+            guard (p != nil) else
+            {
+                return exp(cos(theta))
+            }
+        
+            let pPtr:UnsafeMutablePointer<Double> = p!.bindMemory(to: Double.self, capacity: 1)
+            let x:Double = pPtr.pointee
+        
+            return exp(-x * cos(theta))
+        },
+        params: &params)
+
+    
+    // var integrand:gsl_function = gsl_function(function: M0X_integrand, params: &params)
     
     let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
     
@@ -92,7 +114,8 @@ func M0(_ x:Double) -> Double
     return result * 2.0 / π
 }
 
-func M1X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+/*
+func M1X_integrand(_ theta:Double, params:UnsafeMutableRawPointer?) -> Double
     {
     // first we have to convert the params pointer to a Double
     let dpParams = UnsafeMutablePointer<Double>(params)
@@ -100,7 +123,7 @@ func M1X_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
     
     return exp(-x * cos(theta)) * cos(theta)
 }
-
+*/
 
 func M1(_ x:Double) -> Double
 {
@@ -110,7 +133,19 @@ func M1(_ x:Double) -> Double
     
     var params = x
     
-    var integrand:gsl_function = gsl_function(function: M1X_integrand, params: &params)
+    var integrand:gsl_function = gsl_function(function: {(theta:Double, p:UnsafeMutableRawPointer?) -> Double in
+        
+        guard (p != nil) else
+        {
+            return exp(cos(theta))
+        }
+        
+        let pPtr:UnsafeMutablePointer<Double> = p!.bindMemory(to: Double.self, capacity: 1)
+        let x:Double = pPtr.pointee
+        
+        return exp(-x * cos(theta)) * cos(theta)
+        },
+        params: &params)
     
     let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
     
@@ -123,6 +158,7 @@ func M1(_ x:Double) -> Double
     return (1.0 - result) * 2.0 / π
 }
 
+/*
 func IntM0T_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
 {
     // first we have to convert the params pointer to a Double
@@ -131,6 +167,7 @@ func IntM0T_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Doub
 
     return (1.0 - exp(-x * cos(theta))) / cos(theta)
 }
+ */
 
 func IntegralOf_M0_from0_to(_ b:Double) -> Double
 {
@@ -140,7 +177,19 @@ func IntegralOf_M0_from0_to(_ b:Double) -> Double
     
     var params = b
     
-    var integrand:gsl_function = gsl_function(function: IntM0T_integrand, params: &params)
+    var integrand:gsl_function = gsl_function(function: {(theta:Double, p:UnsafeMutableRawPointer?) -> Double in
+        
+        guard (p != nil) else
+        {
+            return exp(cos(theta))
+        }
+        
+        let pPtr:UnsafeMutablePointer<Double> = p!.bindMemory(to: Double.self, capacity: 1)
+        let x:Double = pPtr.pointee
+        
+        return (1.0 - exp(-x * cos(theta))) / cos(theta)
+        },
+        params: &params)
     
     let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
     

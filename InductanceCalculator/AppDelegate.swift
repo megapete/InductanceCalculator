@@ -622,7 +622,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             dSections.append(nextSectionID)
             
             let coilName = nextSectionID[nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 0)...nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 1)]
-            let diskNum = nextSectionID[nextSectionID.indices.suffix(from: nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 2))]
+            
+            // Next line was broken by Swift 3, but for something a lot less ugly
+            // let diskNum = nextSectionID[nextSectionID.indices.suffix(from: nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 2))]
+            
+            // Swift 3 rewrite (untested)
+            let dNumIndex = nextSectionID.index(nextSectionID.startIndex, offsetBy: 2)
+            let diskNum = nextSectionID.substring(from: dNumIndex)
+            
+            
             let nextDiskNum = String(format: "%03d", Int(diskNum)! + 1)
             
             let inNode = coilName + "I" + diskNum

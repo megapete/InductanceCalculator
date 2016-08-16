@@ -173,8 +173,11 @@ class PCH_DiskSection:Hashable {
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
         let convergenceIterations = 200
-        let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
+        
+        // Next line rendered obsolete by Swift 3 (I think, anyways - XCode updated the code and I didn't check everything it did)
+        // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
+        
         
         // for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         DispatchQueue.concurrentPerform(iterations: convergenceIterations)
@@ -232,7 +235,7 @@ class PCH_DiskSection:Hashable {
         // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
         let convergenceIterations = 200
-        let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
+        // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         // for i in 0..<convergenceIterations

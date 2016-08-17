@@ -154,6 +154,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // and now the top HV disk with its static ring
         hvSeriesCaps[numCoilSections[hvCoil]-1] = 6.158E-9
         
+        // Shunt capacitances are by far the most challenging to define (but probably easiest to calculate, ie: capacitance of concentric cylinders). The innermost coil will have a "total" capacitance to ground (core) and similarly, the outermost coil will have a ground capacitance to the tank. Other coils will all have total capactiances to adjacent coils, which must be distributed to the number of sections we're using. This should be easy, except not all coils are of the same height (ie: regulating windings). 
+        
+        // And we finish with the regulating winding
+        // first (bottommost) RV disk
+        rvSeriesCaps[0] = 9.404E-10
+        
+        // normal disks
+        for i in 1..<numCoilSections[rvCoil]-1
+        {
+            rvSeriesCaps[i] = 5.509E-10
+        }
+        
+        // last (topmost) RV disk with static ring
+        rvSeriesCaps[numCoilSections[rvCoil]-1] = 5.081E-10
+        
         var coilSections = [PCH_DiskSection]()
         
         

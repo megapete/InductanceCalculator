@@ -106,10 +106,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zStep = [50.944 / Double(useNumCoilSections[lvCoil]) * 25.4/1000.0, 51.055 / Double(useNumCoilSections[hvCoil]) * 25.4/1000.0, 40.465 / Double(useNumCoilSections[rvCoil]) * 25.4/1000.0]
         let Irms = [113.636, 72.169, 36.084]
+        
+        // In the context of these calculations, N is the number of turns per coil section
         let N = [numCoilSections[lvCoil] / useNumCoilSections[lvCoil], numCoilSections[hvCoil] / useNumCoilSections[hvCoil], numCoilSections[rvCoil] / useNumCoilSections[rvCoil]]
+        
         let innerRadius = [22.676 / 2.0 * 25.4/1000.0, 31.582 / 2.0 * 25.4/1000.0, 41.802 / 2.0 * 25.4/1000.0]
         let identification = ["LV", "HV", "RV"]
         let resistancePerSection = [4.392E-3 * Double(N[lvCoil]) * resFactor, 2.062E-2 * Double(N[hvCoil]) * resFactor, 8.117E-3 * Double(N[rvCoil]) * resFactor]
+        
+        // The capacitances are a bit more complicated to set up. The series capacitances can change within a coil (partial interleaving, static rings) and there are usually multiple shunt capacitances from any given coil section (to other coil sections, ground, etc). This is all further complicated by the fact that we may not be modelling every disk.
+        
+        // We'll set up three different arrays for the series capacitances. The LV and RV are simple but the HV has an interleaved section.
+        var lvSeriesCaps = [Double](repeatElement(0.0, count: numCoilSections[lvCoil]))
+        var hvSeriesCaps = [Double](repeatElement(0.0, count: numCoilSections[hvCoil]))
+        var rvSeriesCaps = [Double](repeatElement(0.0, count: numCoilSections[rvCoil]))
+        
+        // first (bottommost) LV disk + static ring
+        lvSeriesCaps[0] = 6.498E-10
+        
+        // normal disks
+        for i in 1..<numCoilSections[lvCoil]-1
+        {
+            lvSeriesCaps[i] = 8.007E-10
+        }
+        
+        // last (topmost) LV disk with static ring
+        lvSeriesCaps[numCoilSections[lvCoil]-1] = 6.498E-10
+        
+        // The bottommost HV disk does not have a static ring
+        hvSeriesCaps[0] = 5.766E-9
+        
+        // The top disks are interleaved, so we'll set a simple variable for use in the rest of the HV series caps
+        let topInterleavedDisks = 12
+        
+        let lastNonInterleavedDisk = numCoilSections[hvCoil] - topInterleavedDisks
+        for i in 1..<lastNonInterleavedDisk
+        {
+            hvSeriesCaps[i] = 8.093E-10
+        }
+        
+        // now the interleaved disks (except the top one, which also has a static ring)
+        for i in lastNonInterleavedDisk..<numCoilSections[hvCoil]-1
+        {
+            hvSeriesCaps[i] = 6.168E-9
+        }
+        
+        // and now the top HV disk with its static ring
+        hvSeriesCaps[numCoilSections[hvCoil]-1] = 6.158E-9
         
         var coilSections = [PCH_DiskSection]()
         

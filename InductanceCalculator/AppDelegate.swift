@@ -89,11 +89,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let lvCoilSections = 16
         let hvCoilSections = 60
         
-        // New stuff (to make things more "general"
+        // New stuff (to make things more "general")
+        
+        let windowHeight = 1.56
+        let coreRadius = 0.51562 / 2.0
         
         // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
         let resFactor = 3000.0
-        // Set the index numbers for the three coils we'll be modelling
+        
+        // Set the index numbers for the three coils we'll be modeling. NOTE: The coil index numbers MUST be in order from closest-to-core (0) to furthest-from-core.
         let lvCoil = 0
         let hvCoil = 1
         let rvCoil = 2
@@ -104,13 +108,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let useNumCoilSections = [98, 66, 80]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
-        let zStep = [50.944 / Double(useNumCoilSections[lvCoil]) * 25.4/1000.0, 51.055 / Double(useNumCoilSections[hvCoil]) * 25.4/1000.0, 40.465 / Double(useNumCoilSections[rvCoil]) * 25.4/1000.0]
+        let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
+        let zInterDisk = [0.15 * 0.98 * 25.4/1000.0, 0.22 * 0.98 * 25.4/1000.0, 0.15 * 0.98 * 25.4/1000.0]
+        
+        var zSection = [Double](repeatElement(0.0, count: numCoils))
+        for i in 0..<numCoils
+        {
+            zSection[i] = (zHt[i] - zInterDisk[i] * Double(useNumCoilSections[i] - 1)) / Double(useNumCoilSections[i])
+        }
+        
         let Irms = [113.636, 72.169, 36.084]
         
-        // In the context of these calculations, N is the number of turns per coil section
-        let N = [numCoilSections[lvCoil] / useNumCoilSections[lvCoil], numCoilSections[hvCoil] / useNumCoilSections[hvCoil], numCoilSections[rvCoil] / useNumCoilSections[rvCoil]]
+        let N = [579, 912, 182]
         
         let innerRadius = [22.676 / 2.0 * 25.4/1000.0, 31.582 / 2.0 * 25.4/1000.0, 41.802 / 2.0 * 25.4/1000.0]
+        let outerRadius = [26.482 / 2.0 * 25.4/1000.0, 36.302 / 2.0 * 25.4/1000.0, 42.483 / 2.0 * 25.4/1000.0]
         let identification = ["LV", "HV", "RV"]
         let resistancePerSection = [4.392E-3 * Double(N[lvCoil]) * resFactor, 2.062E-2 * Double(N[hvCoil]) * resFactor, 8.117E-3 * Double(N[rvCoil]) * resFactor]
         
@@ -154,8 +166,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // and now the top HV disk with its static ring
         hvSeriesCaps[numCoilSections[hvCoil]-1] = 6.158E-9
         
-        // Shunt capacitances are by far the most challenging to define (but probably easiest to calculate, ie: capacitance of concentric cylinders). The innermost coil will have a "total" capacitance to ground (core) and similarly, the outermost coil will have a ground capacitance to the tank. Other coils will all have total capactiances to adjacent coils, which must be distributed to the number of sections we're using. This should be easy, except not all coils are of the same height (ie: regulating windings). 
-        
         // And we finish with the regulating winding
         // first (bottommost) RV disk
         rvSeriesCaps[0] = 9.404E-10
@@ -169,10 +179,75 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // last (topmost) RV disk with static ring
         rvSeriesCaps[numCoilSections[rvCoil]-1] = 5.081E-10
         
-        var coilSections = [PCH_DiskSection]()
+        // Now create an array of arrays for the series capacitances
+        let seriesCapacitances = [lvSeriesCaps, hvSeriesCaps, rvSeriesCaps]
         
+        // Shunt capacitances are by far the most challenging to define (but probably easiest to calculate, ie: capacitance of concentric cylinders). The innermost coil will have a "total" capacitance to ground (core) and similarly, the outermost coil will have a ground capacitance to the tank. Other coils will all have total capactiances to adjacent coils, which must be distributed to the number of sections we're using. This should be easy, except not all coils are of the same height (ie: regulating windings). 
         
+        // We store the full "radial capacitance" inside each coil (to the previous coil). Note that the core and the tank are considered the first and last coils in this assumption.
+        let radialCapacitances = [2.071E-9, 1.157E-9, 1.145E-9, 1.0E12]
         
+        // We set up an array of arrays to hold each of the coil's sections.
+        var coils:[[PCH_DiskSection]] = [[]]
+        
+        var sectionSerialNumber = 0
+        var nodeSerialNumber = 0
+
+        // We start by setting up the geometric, series-capacitance, and resistance data for the coils. We'll take care of shunt capacitances and inductances later.
+        for currentCoil in 0..<numCoils
+        {
+            // set up some loop variables
+            var currentZ = CGFloat(zBot[currentCoil])
+            let currentRB = CGFloat(outerRadius[currentCoil]-innerRadius[currentCoil])
+            let currentID = identification[currentCoil]
+            let ir = CGFloat(innerRadius[currentCoil])
+            let secHt = CGFloat(zSection[currentCoil])
+            let zStep = secHt + CGFloat(zInterDisk[currentCoil])
+            let currentResistance = resistancePerSection[currentCoil] * Double(numCoilSections[currentCoil]) / Double(useNumCoilSections[currentCoil])
+            
+            var disksPerSection = Double(numCoilSections[currentCoil]) / Double(useNumCoilSections[currentCoil])
+            
+            var currentCoilSections = [PCH_DiskSection]()
+            
+            for currentSection in 0..<useNumCoilSections[currentCoil]
+            {
+                let nextSectionRect = NSMakeRect(ir, currentZ, currentRB, secHt)
+                
+                var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", currentID, currentSection+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
+                
+                // Save the resistance for the section
+                nextSectionData.resistance = currentResistance
+                
+                // Calculate and save the series capacitance for the section. This could be optimized for the case where the number of sections is equal to the number of disks.
+                let firstDisk = Int(round(Double(currentSection) * disksPerSection))
+                let lastDisk = Int(round(Double(currentSection+1) * disksPerSection))
+                
+                var sumOfInverses = 0.0
+                for nextDisk in firstDisk..<lastDisk
+                {
+                    sumOfInverses += 1.0 / seriesCapacitances[currentCoil][nextDisk]
+                }
+                
+                nextSectionData.seriesCapacitance = 1.0 / sumOfInverses
+                
+                let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: Double(N[currentCoil]), J: Double(N[currentCoil]) * Irms[currentCoil] / Double(nextSectionRect.width * nextSectionRect.height), windHt: windowHeight, coreRadius: coreRadius, secData: nextSectionData)
+                
+                // Calculate and save the self-inductance for the section
+                nextSection.data.selfInductance = nextSection.SelfInductance()
+                
+                currentCoilSections.append(nextSection)
+
+                sectionSerialNumber += 1
+                nodeSerialNumber += 1
+                
+                currentZ += zStep
+            }
+            
+            coils.append(currentCoilSections)
+            nodeSerialNumber += 1
+        }
+        
+        /*
         var lvSectionArray = [PCH_DiskSection]()
         // do the lv first
         var lvZ = (2.25 + 1.913/2.0) * 25.4/1000.0
@@ -184,8 +259,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let lvSerCapPerSection = 1.8072E-10 / lvN
         let lvShuntCapPerSection = (3.9534E-11 + 3.2097E-11) * lvN
         
-        var sectionSerialNumber = 0
-        var nodeSerialNumber = 0
         
         for i in 0 ..< lvCoilSections
         {
@@ -536,6 +609,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         DLog("V: \(V)")
         DLog("I: \(I)")
+        */
         
         // NSApplication.sharedApplication().terminate(self)
 
@@ -671,7 +745,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var mutSerNum = 1
         var dSections = [String]()
         
-        cArray = coilSections
+        let cArray = coilSections
         
         for nextDisk in cArray
         {

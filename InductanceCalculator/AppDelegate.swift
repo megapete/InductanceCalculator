@@ -184,7 +184,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Shunt capacitances are by far the most challenging to define (but probably easiest to calculate, ie: capacitance of concentric cylinders). The innermost coil will have a "total" capacitance to ground (core) and similarly, the outermost coil will have a ground capacitance to the tank. Other coils will all have total capactiances to adjacent coils, which must be distributed to the number of sections we're using. This should be easy, except not all coils are of the same height (ie: regulating windings). 
         
-        // We store the full "radial capacitance" inside each coil (to the previous coil). Note that the core and the tank are considered the first and last coils in this assumption.
+        // We store the full "radial capacitance" inside each coil (to the previous coil). Note that the core and the tank are considered the first and last coils in this array.
         let radialCapacitances = [2.071E-9, 1.157E-9, 1.145E-9, 1.0E12]
         
         // We set up an array of arrays to hold each of the coil's sections.
@@ -245,6 +245,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             coils.append(currentCoilSections)
             nodeSerialNumber += 1
+        }
+        
+        // Now we'll set up the shunt capacitances.
+        var numInnerCoilSections = 1
+        var currentInnerCoilSections = [gndSection]
+        
+        for i in 0...numCoils
+        {
+            var maxSections = 1
+            if (i != numCoils)
+            {
+                maxSections = max(numInnerCoilSections, useNumCoilSections[i])
+            }
+            
+            let capPerSection = radialCapacitances[i] / Double(maxSections)
+            
+            var leftSectionIndex = 0
+            var rightSectionIndex = 0
+            
+            for j in 0..<maxSections
+            {
+                currentInnerCoilSections[leftSectionIndex].data.shuntCaps[coils[i][rightSectionIndex]] = capPerSection
+                
+                leftSectionIndex += Int(Double(j+1) / (Double(numInnerCoilSections) / Double(maxSections)))
+            }
+            
+            if (i != numCoils)
+            {
+                numInnerCoilSections = useNumCoilSections[i]
+                currentInnerCoilSections = coils[i]
+            }
         }
         
         /*

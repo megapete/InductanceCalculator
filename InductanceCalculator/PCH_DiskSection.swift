@@ -176,8 +176,8 @@ class PCH_DiskSection:Hashable {
         
         // Next line rendered obsolete by Swift 3 (I think, anyways - XCode updated the code and I didn't check everything it did)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
-        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
+        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         // for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         DispatchQueue.concurrentPerform(iterations: convergenceIterations)
@@ -232,9 +232,11 @@ class PCH_DiskSection:Hashable {
         
         
         // After testing, I've decided to go with the BlueBook recommendation to simply execute the sumation 200 times insead of stopping after some informal definition of "convergence".
+        // After more testing, it appears that for very small disks, 200 may be too many (the calculation gives nonsensical results). More testing is warranted.
+        
         // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
-        let convergenceIterations = 200
+        let convergenceIterations = (self.diskRect.size.width < 0.025 || otherDisk.diskRect.size.width < 0.025 ? 100 : 200)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         

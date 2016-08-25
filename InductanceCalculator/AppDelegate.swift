@@ -254,9 +254,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for i in 0...numCoils
         {
             var maxSections = 1
+            var numCurrentCoilSections = 0
+            var currentCoilSections:[PCH_DiskSection]
             if (i != numCoils)
             {
-                maxSections = max(numInnerCoilSections, useNumCoilSections[i])
+                numCurrentCoilSections = useNumCoilSections[i]
+                currentCoilSections = coils[i]
+                maxSections = max(numInnerCoilSections, numCurrentCoilSections)
+            }
+            else
+            {
+                // This will work even if numInnerCoilSections is equal to 1
+                maxSections = numInnerCoilSections
+                numCurrentCoilSections = 1
+                currentCoilSections = [gndSection]
             }
             
             let capPerSection = radialCapacitances[i] / Double(maxSections)
@@ -266,9 +277,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             for j in 0..<maxSections
             {
-                currentInnerCoilSections[leftSectionIndex].data.shuntCaps[coils[i][rightSectionIndex]] = capPerSection
+                currentInnerCoilSections[leftSectionIndex].data.shuntCaps[currentCoilSections[rightSectionIndex]] = capPerSection
                 
-                leftSectionIndex += Int(Double(j+1) / (Double(numInnerCoilSections) / Double(maxSections)))
+                leftSectionIndex = Int(Double(j+1) * (Double(numInnerCoilSections) / Double(maxSections)))
+                rightSectionIndex = Int(Double(j+1) * (Double(numCurrentCoilSections) / Double(maxSections)))
             }
             
             if (i != numCoils)

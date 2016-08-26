@@ -10,6 +10,30 @@
 
 import Foundation
 
+/**
+    Swift does a ridiculous amount of syntactic gymnastics for strings to ensure that every possible alphabet know to man will be properly handled. Since my program will (mostly) be used in the Western world, I have decided to write a few simple functions to make string manipulation easier.
+    
+    Version 1.0: Compatibility with Swift 3 (former versions untested)
+*/
+
+// The PCH_Mid function returns a substring the old-fashioned way
+func PCH_Mid(_ src:String, start:Int, end:Int) -> String
+{
+    let strLen = src.characters.count
+    
+    guard (start >= 0 && start < strLen && end >= start && end < strLen) else
+    {
+        DLog("Illegal index")
+        return ""
+    }
+    
+    let theRange = Range(uncheckedBounds: (src.index(src.startIndex, offsetBy: start), src.index(src.startIndex, offsetBy: end)))
+    
+    let result = src.substring(with: theRange)
+    
+    return result
+}
+
 /** 
 
     My standard debug logging function (this will probably change with time)

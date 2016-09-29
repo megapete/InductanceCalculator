@@ -105,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let numCoils = 3
         
         let numCoilSections = [98, 66, 80]
-        let useNumCoilSections = [14, 66, 20]
+        let useNumCoilSections = [14, 22, 20]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -814,15 +814,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let nextSectionID = nextDisk.data.sectionID
             dSections.append(nextSectionID)
             
-            let coilName = nextSectionID[nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 0)...nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 1)]
+            let coilName = PCH_StrLeft(nextSectionID, length: 2)
             
             // Next line was broken by Swift 3, but for something a lot less ugly
             // let diskNum = nextSectionID[nextSectionID.indices.suffix(from: nextSectionID.characters.index(nextSectionID.startIndex, offsetBy: 2))]
             
             // Swift 3 rewrite (untested)
-            let dNumIndex = nextSectionID.index(nextSectionID.startIndex, offsetBy: 2)
-            let diskNum = nextSectionID.substring(from: dNumIndex)
-            
+            // let dNumIndex = nextSectionID.index(nextSectionID.startIndex, offsetBy: 2)
+            // let diskNum = nextSectionID.substring(from: dNumIndex)
+            let diskNum = PCH_StrRight(nextSectionID, length: 3)
             
             let nextDiskNum = String(format: "%03d", Int(diskNum)! + 1)
             
@@ -891,12 +891,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // We connect the coil ends to their nodes using very small resistances
         fString += "* Coil ends\n"
-        for nextCoil in coils
+        for i in 0..<numCoils
         {
-            let nextID = nextCoil[0].data.sectionID
+            let nextID = identification[i]
             
-            fString += "R" + nextID + "TOP " + nextID + "TOP " + nextID + "I001 1.0E-9\n"
-            fString += "R" + nextID + "BOT " + nextID + "BOT " + nextID + String(format: "I%03d 1.0E-9\n", nextCoil.count + 1)
+            fString += "R" + nextID + "BOT " + nextID + "BOT " + nextID + "I001 1.0E-9\n"
+            fString += "R" + nextID + "TOP " + nextID + "TOP " + nextID + String(format: "I%03d 1.0E-9\n", coils[i].count + 1)
         }
         
         /*

@@ -16,10 +16,34 @@ import Foundation
     Version 1.0: Compatibility with Swift 3 (former versions untested)
 */
 
-// The PCH_Mid function returns a substring the old-fashioned way
-func PCH_Mid(_ src:String, start:Int, end:Int) -> String
+// PCH_StrLeft returns the leftmost substring of a given string
+func PCH_StrLeft(_ src:String, length:Int) -> String
 {
-    let strLen = src.characters.count
+    if (length >= PCH_StrLength(src))
+    {
+        return src
+    }
+    
+    return PCH_StrMid(src, start: 0, end: length-1)
+}
+
+// PCH_StrRight returns the rightmost substring of a given string
+func PCH_StrRight(_ src:String, length:Int) -> String
+{
+    if (length >= PCH_StrLength(src))
+    {
+        return src
+    }
+    
+    let strLen = PCH_StrLength(src)
+    
+    return PCH_StrMid(src, start: strLen-length, end: strLen-1)
+}
+
+// The PCH_StrMid function returns a substring the old-fashioned way
+func PCH_StrMid(_ src:String, start:Int, end:Int) -> String
+{
+    let strLen = PCH_StrLength(src)
     
     guard (start >= 0 && start < strLen && end >= start && end < strLen) else
     {
@@ -32,6 +56,12 @@ func PCH_Mid(_ src:String, start:Int, end:Int) -> String
     let result = src.substring(with: theRange)
     
     return result
+}
+
+// A more familiar way of getting a string's length
+func PCH_StrLength(_ src:String) -> Int
+{
+    return src.characters.count
 }
 
 /** 

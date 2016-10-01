@@ -66,9 +66,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         */
         
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
-        let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
+        let lv = PCH_DiskSection(coilRef: 0, diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
         var hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
-        let hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV", serNum:1, inNode:2, outNode:3))
+        let hv = PCH_DiskSection(coilRef:1, diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV", serNum:1, inNode:2, outNode:3))
         
         let L1 = lv.SelfInductance()
         let L2 = hv.SelfInductance()
@@ -82,14 +82,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         
         // Create the special "ground" section. By convention, it has a serial number of -1.
-        let gndSection = PCH_DiskSection(diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
+        let gndSection = PCH_DiskSection(coilRef: -1, diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
         
         // Now we try again but split each coil into sections. 
         // NOTE: To get this to work with SPICE, it is necessary to increase RELTOL to 0.025 (LTSpice)
-        let lvCoilSections = 16
-        let hvCoilSections = 60
+        // let lvCoilSections = 16
+        // let hvCoilSections = 60
         
         // New stuff (to make things more "general")
+        
+        // NOTE: To get this to work with SPICE, it may be necessary to increase RELTOL to as high as 0.025 (LTSpice)
         
         let windowHeight = 1.56
         let coreRadius = 0.51562 / 2.0
@@ -105,7 +107,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let numCoils = 3
         
         let numCoilSections = [98, 66, 80]
-        let useNumCoilSections = [14, 22, 20]
+        let useNumCoilSections = [14, 11, 20]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -124,7 +126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let innerRadius = [22.676 / 2.0 * 25.4/1000.0, 31.582 / 2.0 * 25.4/1000.0, 41.802 / 2.0 * 25.4/1000.0]
         let outerRadius = [26.482 / 2.0 * 25.4/1000.0, 36.302 / 2.0 * 25.4/1000.0, 42.483 / 2.0 * 25.4/1000.0]
         let identification = ["LV", "HV", "RV"]
-        let resistancePerSection = [4.392E-3 * Double(N[lvCoil]) * resFactor, 2.062E-2 * Double(N[hvCoil]) * resFactor, 8.117E-3 * Double(N[rvCoil]) * resFactor]
+        let resistancePerSection = [0.424257 / Double(numCoilSections[lvCoil]) * resFactor, 1.361154 / Double(numCoilSections[hvCoil]) * resFactor, 0.649376 / Double(numCoilSections[rvCoil]) * resFactor]
         
         // The capacitances are a bit more complicated to set up. The series capacitances can change within a coil (partial interleaving, static rings) and there are usually multiple shunt capacitances from any given coil section (to other coil sections, ground, etc). This is all further complicated by the fact that we may not be modelling every disk.
         
@@ -149,7 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hvSeriesCaps[0] = 5.766E-9
         
         // The top disks are interleaved, so we'll set a simple variable for use in the rest of the HV series caps
-        let topInterleavedDisks = 12
+        let topInterleavedDisks = 16
         
         let lastNonInterleavedDisk = numCoilSections[hvCoil] - topInterleavedDisks
         for i in 1..<lastNonInterleavedDisk
@@ -185,7 +187,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Shunt capacitances are by far the most challenging to define (but probably easiest to calculate, ie: capacitance of concentric cylinders). The innermost coil will have a "total" capacitance to ground (core) and similarly, the outermost coil will have a ground capacitance to the tank. Other coils will all have total capactiances to adjacent coils, which must be distributed to the number of sections we're using. This should be easy, except not all coils are of the same height (ie: regulating windings). 
         
         // We store the full "radial capacitance" inside each coil (to the previous coil). Note that the core and the tank are considered the first and last coils in this array.
-        let radialCapacitances = [2.071E-9, 1.157E-9, 1.145E-9, 1.0E12]
+        let radialCapacitances = [2.071E-9, 1.157E-9, 1.145E-9, 1.0E-12]
         
         // We set up an array of arrays to hold each of the coil's sections.
         var coils = [[PCH_DiskSection]]()
@@ -193,7 +195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var sectionSerialNumber = 0
         var nodeSerialNumber = 0
 
-        // We start by setting up the geometric, series-capacitance, and resistance data for the coils. We'll take care of shunt capacitances and inductances later.
+        // We start by setting up the geometric, series-capacitance, self-inductances and resistance data for the coils. We'll take care of shunt capacitances and mutual inductances later.
         for currentCoil in 0..<numCoils
         {
             // set up some loop variables
@@ -231,7 +233,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 nextSectionData.seriesCapacitance = 1.0 / sumOfInverses
                 
-                let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: turnsPerSection, J: turnsPerSection * Irms[currentCoil] / Double(nextSectionRect.width * nextSectionRect.height), windHt: windowHeight, coreRadius: coreRadius, secData: nextSectionData)
+                let nextSection = PCH_DiskSection(coilRef: currentCoil, diskRect: nextSectionRect, N: turnsPerSection, J: turnsPerSection * Irms[currentCoil] / Double(nextSectionRect.width * nextSectionRect.height), windHt: windowHeight, coreRadius: coreRadius, secData: nextSectionData)
                 
                 // Calculate and save the self-inductance for the section
                 nextSection.data.selfInductance = nextSection.SelfInductance()
@@ -285,8 +287,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             for j in 0..<maxSections
             {
-                // We only set one of the coils' section data to avoid doubling up the capacitances in the Spice calculation (for BlueBook calcs, the matrix would be symmetric anyways, so...)
+                // We copy the shunt capacitances into each of the coil sections - we need to make sure we do not double up these capacitances when we create the Spice file
                 currentInnerCoilSections[leftSectionIndex].data.shuntCaps[currentCoilSections[rightSectionIndex]] = capPerSection
+                currentCoilSections[rightSectionIndex].data.shuntCaps[currentInnerCoilSections[leftSectionIndex]] = capPerSection
                 
                 leftSectionIndex = Int(Double(j+1) * (Double(numInnerCoilSections) / Double(maxSections)))
                 rightSectionIndex = Int(Double(j+1) * (Double(numCurrentCoilSections) / Double(maxSections)))
@@ -843,10 +846,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fString += seriesCapName + " " + inNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.seriesCapacitance)
             
             var shuntCapSerialNum = 0
-            for nextShuntCap in nextDisk.data.shuntCapacitances
+            for nextShuntCap in nextDisk.data.shuntCaps
             {
+                // We ignore inner coils because they've already been done (note that we need to consider the core, though)
+                if ((nextShuntCap.key.coilRef < nextDisk.coilRef) && (nextShuntCap.key.coilRef != -1))
+                {
+                    continue
+                }
+                
                 let nsName = String(format: "CP%@%03d", nextSectionID, shuntCapSerialNum)
                 
+                /*
                 let shuntID = nextShuntCap.0
                 
                 // make sure that this capacitance is not already done
@@ -854,20 +864,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 {
                     continue
                 }
+                 */
                 
                 var shuntNode = String()
-                if (shuntID == "0")
+                if (nextShuntCap.key.coilRef == -1)
                 {
                     shuntNode = "0"
                 }
                 else
                 {
-                    shuntNode = shuntID[shuntID.characters.index(shuntID.startIndex, offsetBy: 0)...shuntID.characters.index(shuntID.startIndex, offsetBy: 1)]
+                    shuntNode = identification[nextShuntCap.key.coilRef]
                     shuntNode += "I"
-                    shuntNode += shuntID[shuntID.characters.index(shuntID.startIndex, offsetBy: 2)...shuntID.endIndex]
+                    let nodeNum = PCH_StrRight(nextShuntCap.key.data.sectionID, length: 3)
+                    shuntNode += nodeNum
                 }
                 
-                fString += nsName + " " + inNode + " " + shuntNode + String(format: " %.4E\n", nextShuntCap.1)
+                fString += nsName + " " + inNode + " " + shuntNode + String(format: " %.4E\n", nextShuntCap.value)
                 
                 shuntCapSerialNum += 1
             }

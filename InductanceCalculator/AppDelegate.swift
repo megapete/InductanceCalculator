@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         */
         
+        /*
         var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
         let lv = PCH_DiskSection(coilRef: 0, diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
         var hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
@@ -79,7 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         
         DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-        
+        */
         
         // Create the special "ground" section. By convention, it has a serial number of -1.
         let gndSection = PCH_DiskSection(coilRef: -1, diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
@@ -97,7 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let coreRadius = 0.51562 / 2.0
         
         // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
-        let resFactor = 3000.0
+        let resFactor = 1000.0
         
         // Set the index numbers for the three coils we'll be modeling. NOTE: The coil index numbers MUST be in order from closest-to-core (0) to furthest-from-core.
         let lvCoil = 0
@@ -107,7 +108,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let numCoils = 3
         
         let numCoilSections = [98, 66, 80]
-        let useNumCoilSections = [14, 11, 20]
+        
+        // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.035, trtol = 7
+        // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
+        let useNumCoilSections = [7, 66, 8]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -839,7 +843,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             fString += String(format: "* Definitions for section: %@\n", nextSectionID)
             fString += selfIndName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance)
-            // Calculate the resistance that we need to put in parallel with the inductance to prevent ringing (according to ATPDraw)
+            // Calculate the resistance that we need to put in parallel with the inductance to prevent ringing (according to ATPDraw: ind * 2.0 * 7.5 * 1000.0 / 1E9)
             fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 1000.0 / 1.0E-9)
 
             fString += resName + " " + midNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.resistance)

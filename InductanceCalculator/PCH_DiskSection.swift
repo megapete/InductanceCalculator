@@ -240,7 +240,7 @@ class PCH_DiskSection:Hashable {
         
         // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
-        let convergenceIterations = (self.diskRect.size.width < 0.025 || otherDisk.diskRect.size.width < 0.025 ? (self.diskRect.size.width < 0.01 || otherDisk.diskRect.size.width < 0.01 ? 50 : 100) : 200)
+        let convergenceIterations = 200 // (self.diskRect.size.width < 0.025 || otherDisk.diskRect.size.width < 0.025 ? (self.diskRect.size.width < 0.01 || otherDisk.diskRect.size.width < 0.01 ? 50 : 100) : 200)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         

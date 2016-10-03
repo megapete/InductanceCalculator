@@ -10,6 +10,8 @@
 
 import Foundation
 
+let relError = 1.0E-4
+
 func IntegralOf_tL1_from0_to(_ b:Double) -> Double
 {
     return (-b * M0(b)) - (b * b / π) + IntegralOf_M0_from0_to(b) + IntegralOf_tI1_from0_to(b)
@@ -103,7 +105,7 @@ func M0(_ x:Double) -> Double
     
     // var integrand:gsl_function = gsl_function(function: M0X_integrand, params: &params)
     
-    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
+    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, relError, &result, &iError, &iNumEvals)
     
     if (fRes > 0)
     {
@@ -147,7 +149,7 @@ func M1(_ x:Double) -> Double
         },
         params: &params)
     
-    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
+    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, relError, &result, &iError, &iNumEvals)
     
     if (fRes > 0)
     {
@@ -191,7 +193,7 @@ func IntegralOf_M0_from0_to(_ b:Double) -> Double
         },
         params: &params)
     
-    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, 1.0E-8, &result, &iError, &iNumEvals)
+    let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, relError, &result, &iError, &iNumEvals)
     
     if (fRes > 0)
     {

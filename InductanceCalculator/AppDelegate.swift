@@ -98,7 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let coreRadius = 0.51562 / 2.0
         
         // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
-        let resFactor = 1000.0
+        let resFactor = 2000.0 // 3000.0
         
         // Set the index numbers for the three coils we'll be modeling. NOTE: The coil index numbers MUST be in order from closest-to-core (0) to furthest-from-core.
         let lvCoil = 0

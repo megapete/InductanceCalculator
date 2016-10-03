@@ -915,16 +915,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fString += "R" + nextID + "TOP " + nextID + "TOP " + nextID + String(format: "I%03d 1.0E-9\n", coils[i].count + 1)
         }
         
-        /*
-        let hID = "HV"
-        let lID = "LV"
-        fString += "* Coil ends\n"
-        fString += "R" + hID + "TOP " + hID + "TOP " + hID + "I001 1.0E-9\n"
-        fString += "R" + lID + "TOP " + lID + "TOP " + lID + "I001 1.0E-9\n"
         
-        fString += "R" + hID + "BOT " + hID + "BOT " + hID + String(format: "I%03d 1.0E-9\n", hvCoilSections + 1)
-        fString += "R" + lID + "BOT " + lID + "BOT " + lID + String(format: "I%03d 1.0E-9\n", lvCoilSections + 1)
-        */
         
         self.saveFileWithString(fString)
         

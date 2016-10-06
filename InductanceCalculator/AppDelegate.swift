@@ -109,9 +109,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let numCoilSections = [98, 66, 80]
         
-        // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.035, trtol = 7
+        // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.03, trtol = 7
         // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
-        let useNumCoilSections = [7, 66, 8]
+        let useNumCoilSections = [14, 66, 20]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -152,10 +152,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lvSeriesCaps[numCoilSections[lvCoil]-1] = 6.498E-10
         
         // The bottommost HV disk does not have a static ring
-        hvSeriesCaps[0] = 5.766E-9
+        hvSeriesCaps[0] = 2.643E-10
         
         // The top disks are interleaved, so we'll set a simple variable for use in the rest of the HV series caps
-        let topInterleavedDisks = 16
+        let topInterleavedDisks = 0
         
         let lastNonInterleavedDisk = numCoilSections[hvCoil] - topInterleavedDisks
         for i in 1..<lastNonInterleavedDisk
@@ -164,13 +164,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // now the interleaved disks (except the top one, which also has a static ring)
-        for i in lastNonInterleavedDisk..<numCoilSections[hvCoil]-1
+        if topInterleavedDisks != 0
         {
-            hvSeriesCaps[i] = 6.168E-9
+            for i in lastNonInterleavedDisk..<numCoilSections[hvCoil]-1
+            {
+                hvSeriesCaps[i] = 6.186E-9
+            }
         }
         
         // and now the top HV disk with its static ring
-        hvSeriesCaps[numCoilSections[hvCoil]-1] = 6.158E-9
+        hvSeriesCaps[numCoilSections[hvCoil]-1] = (topInterleavedDisks != 0 ? 6.158E-9 : 7.846E-10)
         
         // And we finish with the regulating winding
         // first (bottommost) RV disk
@@ -324,7 +327,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let mutIndCoeff = mutInd / sqrt(nDisk.data.selfInductance * otherDisk.data.selfInductance)
                 if (mutIndCoeff < 0.0 || mutIndCoeff > 1.0)
                 {
-                    DLog("MutInd:\(mutInd); this.SelfInd:\(nDisk.data.selfInductance); that.SelfInd:\(otherDisk.data.selfInductance)")
+                    DLog("Illegal Mutual Inductance:\(mutInd); this.SelfInd:\(nDisk.data.selfInductance); that.SelfInd:\(otherDisk.data.selfInductance)")
                 }
                 
                 nDisk.data.mutualInductances[otherDisk.data.sectionID] = mutInd
@@ -805,7 +808,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 */
         // SPICE-FILE STUFF FROM HERE ON
         
-        var fString = String()
+        var fString = "Job 2201 - HV Shot in tap position 1 (highest voltage)\n"
         var mutSerNum = 1
         var dSections = [String]()
         
@@ -843,13 +846,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             fString += String(format: "* Definitions for section: %@\n", nextSectionID)
             fString += selfIndName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance)
-            // Calculate the resistance that we need to put in parallel with the inductance to prevent ringing (according to ATPDraw: ind * 2.0 * 7.5 * 1000.0 / 1E9)
-            fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 1000.0 / 1.0E-9)
+            // Calculate the resistance that we need to put in parallel with the inductance to reducing ringing (according to ATPDraw: ind * 2.0 * 7.5 * 1000.0 / 1E9). Note that the model still rings in LTSpice, regardless of how low I set this value.
+            // fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 1000.0 / 1.0E-9)
 
             fString += resName + " " + midNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.resistance)
             fString += seriesCapName + " " + inNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.seriesCapacitance)
             
-            var shuntCapSerialNum = 0
+            var shuntCapSerialNum = 1
             for nextShuntCap in nextDisk.data.shuntCaps
             {
                 // We ignore inner coils because they've already been done (note that we need to consider the core, though)
@@ -905,17 +908,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        // We connect the coil ends to their nodes using very small resistances
-        fString += "* Coil ends\n"
+        // We connect the coil ends and centers to their nodes using very small resistances
+        fString += "\n* Coil ends and centers\n"
         for i in 0..<numCoils
         {
             let nextID = identification[i]
             
             fString += "R" + nextID + "BOT " + nextID + "BOT " + nextID + "I001 1.0E-9\n"
+            fString += "R" + nextID + "CEN " + nextID + "CEN " + nextID + String(format: "I%03d 1.0E-9\n", coils[i].count / 2 + 1)
             fString += "R" + nextID + "TOP " + nextID + "TOP " + nextID + String(format: "I%03d 1.0E-9\n", coils[i].count + 1)
         }
         
         
+        // TODO: Add code for the connection that interests us
+        fString += "\n* Connections\n\n"
+        
+        // The shot
+        fString += "* Impulse shot\nVBIL HVTOP 0 EXP(0 555k 0 2.2E-7 1.0E-6 7.0E-5)\n\n"
+        
+        // Options required to make this work most of the time
+        fString += "* options for LTSpice\n.OPTIONS reltol=0.02 trtol=7 abstol=1e-6 vntol=1e-4 method=gear\n\n"
+        
+        fString += ".TRAN 1.0ns 100us\n\n.END"
         
         self.saveFileWithString(fString)
         

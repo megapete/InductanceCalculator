@@ -38,7 +38,7 @@ class PCH_DiskSection:Hashable {
     /// The rectangle that the disk occupies
     let diskRect:NSRect
     
-    /// A factor for "fudging" some calculations. The BlueBook says that a factor of three gives better results, but so far, my tests show that a factor closer to 1 is better (closer to Andersen) so that's what I'm using (for now).
+    /// A factor for "fudging" some calculations. The BlueBook says that a factor of three gives better results.
     let windHtFactor = 3.0
     
     /// The electrical data associated with the section
@@ -104,6 +104,17 @@ class PCH_DiskSection:Hashable {
         let Ri0 = gsl_sf_bessel_I0_scaled(xc)
         let Rk0 = gsl_sf_bessel_K0_scaled(xc)
         let eBase = exp(2.0 * xc)
+        
+        if (n > 120)
+        {
+            let checkC = self.C(n)
+            DLog("Stop here! \(checkC)")
+            
+            let method1 = eBase * (Ri0 / Rk0) * self.C(n)
+            let method2 = eBase * self.C(n) * (Ri0 / Rk0)
+            
+            DLog("(1-2):\(method1 - method2)")
+        }
         
         return eBase * (Ri0 / Rk0) * self.C(n)
         

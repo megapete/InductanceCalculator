@@ -24,6 +24,10 @@ func IntegralOf_tL1_from(_ a:Double, toB:Double) -> Double
 
 func IntegralOf_tI1_from0_to(_ b:Double) -> Double
 {
+    if (b < 0)
+    {
+        DLog("Got one!!!")
+    }
     // Alternate method from BlueBook 2nd Ed., page 267
     let Ri0 = gsl_sf_bessel_I0_scaled(b)
     let Ri1 = gsl_sf_bessel_I1_scaled(b)
@@ -145,7 +149,7 @@ func M1(_ x:Double) -> Double
         let pPtr:UnsafeMutablePointer<Double> = p!.bindMemory(to: Double.self, capacity: 1)
         let x:Double = pPtr.pointee
         
-        return exp(-x * cos(theta)) * cos(theta)
+        return exp(-x * cos(theta)) * cos(theta)// * cos(theta) // second cos(theta) added becuase I think it's wrong in the book
         },
         params: &params)
     

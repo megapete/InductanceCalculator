@@ -17,6 +17,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
         
+        // Testing Bluebook functions
+        var lastTest = 0.0
+        for n in 1...200
+        {
+            let x = Double(n)
+            
+            let firstTerm = -x * M0(x)
+            let secondTerm = -(x*x / π)
+            let thirdTerm = IntegralOf_M0_from0_to(x)
+            let fourthTerm = IntegralOf_tI1_from0_to(x)
+            
+            let test = (firstTerm + secondTerm + thirdTerm + fourthTerm)
+            DLog("test = \(test)")
+            DLog("eBase = \(fourthTerm)")
+            DLog("Test-4thTerm = \(test - fourthTerm)")
+            
+            if (n > 1)
+            {
+                DLog("diff = \(test - lastTest)")
+            }
+            
+            lastTest = test
+        }
+        
         /*
         var lvRect = NSMakeRect(19.72 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
         var hvRect = NSMakeRect(25.639 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
@@ -111,7 +135,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.03, trtol = 7
         // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
-        let useNumCoilSections = [14, 66, 20]
+        let useNumCoilSections = [49, 2, 2]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -155,7 +179,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hvSeriesCaps[0] = 2.643E-10
         
         // The top disks are interleaved, so we'll set a simple variable for use in the rest of the HV series caps
-        let topInterleavedDisks = 0
+        let topInterleavedDisks = 12
         
         let lastNonInterleavedDisk = numCoilSections[hvCoil] - topInterleavedDisks
         for i in 1..<lastNonInterleavedDisk
@@ -847,7 +871,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fString += String(format: "* Definitions for section: %@\n", nextSectionID)
             fString += selfIndName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance)
             // Calculate the resistance that we need to put in parallel with the inductance to reducing ringing (according to ATPDraw: ind * 2.0 * 7.5 * 1000.0 / 1E9). Note that the model still rings in LTSpice, regardless of how low I set this value.
-            // fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 1000.0 / 1.0E-9)
+            fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 100.0 / 1.0E-9)
 
             fString += resName + " " + midNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.resistance)
             fString += seriesCapName + " " + inNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.seriesCapacitance)

@@ -105,18 +105,9 @@ class PCH_DiskSection:Hashable {
         let Rk0 = gsl_sf_bessel_K0_scaled(xc)
         let eBase = exp(2.0 * xc)
         
-        if (n > 120)
-        {
-            let checkC = self.C(n)
-            DLog("Stop here! \(checkC)")
-            
-            let method1 = eBase * (Ri0 / Rk0) * self.C(n)
-            let method2 = eBase * self.C(n) * (Ri0 / Rk0)
-            
-            DLog("(1-2):\(method1 - method2)")
-        }
-        
-        return eBase * (Ri0 / Rk0) * self.C(n)
+        let result = eBase * (Ri0 / Rk0) * self.C(n)
+    
+        return result
         
         /* old way
         
@@ -125,6 +116,44 @@ class PCH_DiskSection:Hashable {
         
         return I0 / K0 * self.C(n)
         */
+    }
+    
+    func ScaledD(_ n:Int) -> Double
+    {
+        // returns Rd where D = exp(2.0 * xc - x1) * Rd (xc and x1 are functions of n)
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = Double(n) * π / useWindht
+        
+        let x1 = m * Double(self.diskRect.origin.x)
+        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        let xc = (Double(n) * π / useWindht) * self.coreRadius
+        
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        
+        let ScaledCn = ScaledIntegralOf_tK1_from(x1, toB: x2)
+        
+        return Ri0 / Rk0 * ScaledCn
+    }
+    
+    func AlternateD(_ n:Int) -> Double
+    {
+        // The Dn function, using scaled methods
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = Double(n) * π / useWindht
+        
+        let x1 = m * Double(self.diskRect.origin.x)
+        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        let xc = (Double(n) * π / useWindht) * self.coreRadius
+        
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        
+        let ScaledCn = ScaledIntegralOf_tK1_from(x1, toB: x2)
+        
+        return exp(2.0 * xc - x1) * Ri0 / Rk0 * ScaledCn
     }
     
     /// BlueBook function En
@@ -143,6 +172,8 @@ class PCH_DiskSection:Hashable {
         let m = (Double(n) * π / useWindht)
         
         let x1 = m * Double(self.diskRect.origin.x)
+        
+        // Old way
         let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
         let xc = m * self.coreRadius
         
@@ -150,8 +181,29 @@ class PCH_DiskSection:Hashable {
         let Ri0 = gsl_sf_bessel_I0_scaled(xc)
         let Rk0 = gsl_sf_bessel_K0_scaled(xc)
         let eBase = exp(2.0 * xc)
+ 
+        let result = AlternateD(n) - IntegralOf_tI1_from0_to(x1)
         
-        return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from0_to(x1)
+        return result
+        
+        // OLD return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from0_to(x1)
+    }
+    
+    func AlternateF(_ n:Int) -> Double
+    {
+        // Best method of calculating F (uses scaling techniques)
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = (Double(n) * π / useWindht)
+        
+        let x1 = m * Double(self.diskRect.origin.x)
+        let xc = m * self.coreRadius
+        
+        let exponent = 2.0 * xc - x1
+        
+        let result = exp(exponent) * (ScaledD(n) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
+        
+        return result
     }
     
     /// BlueBook function Gn
@@ -170,6 +222,20 @@ class PCH_DiskSection:Hashable {
         let eBase = exp(2.0 * xc)
         
         return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
+    }
+    
+    func En_x_IntegralOf_tI1(_ n:Int) -> Double
+    {
+        // This function uses "scaled" techniques to try and get a better precision answer for "E(n)*IntegralOf_tI1" statements. It should only be used if both E and the Integral refer to coil sections with the same radial position (ie: all self-inductances and mutual-inductances to other sections in the same coil)
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = (Double(n) * π / useWindht)
+        let x1 = m * Double(self.diskRect.origin.x)
+        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        
+        let result = 0.0
+        
+        return result
     }
     
     /// Rabins' method for calculating self-inductance

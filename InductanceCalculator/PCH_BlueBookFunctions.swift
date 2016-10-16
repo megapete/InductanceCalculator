@@ -24,10 +24,7 @@ func IntegralOf_tL1_from(_ a:Double, toB:Double) -> Double
 
 func IntegralOf_tI1_from0_to(_ b:Double) -> Double
 {
-    if (b < 0)
-    {
-        DLog("Got one!!!")
-    }
+    
     // Alternate method from BlueBook 2nd Ed., page 267
     let Ri0 = gsl_sf_bessel_I0_scaled(b)
     let Ri1 = gsl_sf_bessel_I1_scaled(b)
@@ -36,9 +33,36 @@ func IntegralOf_tI1_from0_to(_ b:Double) -> Double
     return (π / 2.0) * b * eBase * (M1(b) * Ri0 - M0(b) * Ri1)
 }
 
+func ScaledIntegralOf_tI1_from0_to(_ b:Double) -> Double
+{
+    // return IntRI1 where the actual integral = exp(b) * IntRI1
+    
+    let Ri0 = gsl_sf_bessel_I0_scaled(b)
+    let Ri1 = gsl_sf_bessel_I1_scaled(b)
+    
+    return (π / 2.0) * b * (M1(b) * Ri0 - M0(b) * Ri1)
+}
+
 func IntegralOf_tI1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tI1_from0_to(toB) - IntegralOf_tI1_from0_to(a)
+}
+
+func ScaledIntegralOf_tI1_from(_ a:Double, toB:Double) -> Double
+{
+    // return IntRI1 where the actual integral = exp(a) * IntRI1
+    
+    let b = toB
+    
+    let Ri0a = gsl_sf_bessel_I0_scaled(a)
+    let Ri1a = gsl_sf_bessel_I1_scaled(a)
+    let Ri0b = gsl_sf_bessel_I0_scaled(b)
+    let Ri1b = gsl_sf_bessel_I1_scaled(b)
+    
+    let firstTerm = a * (M1(a) * Ri0a - M0(a) * Ri1a)
+    let secondTerm = b * exp(b-a) * (M1(b) * Ri0b - M0(b) * Ri1b)
+    
+    return (π / 2.0) * (secondTerm - firstTerm)
 }
 
 func IntegralOf_tK1_from0_to(_ b:Double) -> Double
@@ -54,6 +78,38 @@ func IntegralOf_tK1_from0_to(_ b:Double) -> Double
 func IntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tK1_from0_to(toB) - IntegralOf_tK1_from0_to(a)
+}
+
+func ScaledIntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
+{
+    // return IntRk1 where the actual integral = exp(-a) * IntRk1
+    guard a <= toB
+    else
+    {
+        DLog("Illegal range")
+        return DBL_MAX
+    }
+    
+    let b = toB
+    
+    let Rk0a = (a != 0 ? gsl_sf_bessel_K0_scaled(a) : 0.0)
+    let Rk1a = (a != 0 ? gsl_sf_bessel_K1_scaled(a) : 0.0)
+    let Rk0b = gsl_sf_bessel_K0_scaled(b)
+    let Rk1b = gsl_sf_bessel_K1_scaled(b)
+    
+    /* Testing and debugging
+    let integA = IntegralOf_tK1_from0_to(a)
+    let integB = IntegralOf_tK1_from0_to(b)
+    
+    let testA = (π / 2.0) * a * exp(-a) * (M1(a) * Rk0a + M0(a) * Rk1a)
+    let testB = (π / 2.0) * b * exp(-b) * (M1(b) * Rk0b + M0(b) * Rk1b)
+    */
+    
+    let firstTerm = a * (M1(a) * Rk0a + M0(a) * Rk1a)
+    let secondTerm = b * exp(a-b) * (M1(b) * Rk0b + M0(b) * Rk1b)
+    
+    return (π / 2.0) * (firstTerm - secondTerm)
+    
 }
 
 /* Unused functions

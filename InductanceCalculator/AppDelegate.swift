@@ -18,28 +18,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Insert code here to initialize your application
         
         // Testing Bluebook functions
-        var lastTest = 0.0
-        for n in 1...200
-        {
-            let x = Double(n)
-            
-            let firstTerm = -x * M0(x)
-            let secondTerm = -(x*x / π)
-            let thirdTerm = IntegralOf_M0_from0_to(x)
-            let fourthTerm = IntegralOf_tI1_from0_to(x)
-            
-            let test = (firstTerm + secondTerm + thirdTerm + fourthTerm)
-            DLog("test = \(test)")
-            DLog("eBase = \(fourthTerm)")
-            DLog("Test-4thTerm = \(test - fourthTerm)")
-            
-            if (n > 1)
-            {
-                DLog("diff = \(test - lastTest)")
-            }
-            
-            lastTest = test
-        }
+        let a = 50 * 0.4
+        let b = 50 * (0.4 + 0.055)
+        
+        let firstTest = IntegralOf_tK1_from(a, toB: b)
+        let secondTest = ScaledIntegralOf_tK1_from(a, toB: b)
+        
+        DLog("First: \(firstTest); Second: \(secondTest) Actual result: \(secondTest * exp(-a)) Diff: \(firstTest - secondTest * exp(-a))")
         
         /*
         var lvRect = NSMakeRect(19.72 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)

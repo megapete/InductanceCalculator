@@ -18,13 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Insert code here to initialize your application
         
         // Testing Bluebook functions
-        let a = 50 * 0.4
-        let b = 50 * (0.4 + 0.055)
         
-        let firstTest = IntegralOf_tK1_from(a, toB: b)
-        let secondTest = ScaledIntegralOf_tK1_from(a, toB: b)
-        
-        DLog("First: \(firstTest); Second: \(secondTest) Actual result: \(secondTest * exp(-a)) Diff: \(firstTest - secondTest * exp(-a))")
         
         /*
         var lvRect = NSMakeRect(19.72 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
@@ -120,7 +114,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.03, trtol = 7
         // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
-        let useNumCoilSections = [49, 2, 2]
+        let useNumCoilSections = [2, 66, 80]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -265,6 +259,57 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             coils.append(currentCoilSections)
             nodeSerialNumber += 1
         }
+        
+        // Testing blueBook functions
+        // The disks to test
+        let testDisk = coils[hvCoil][65]
+        let testDisk2 = coils[rvCoil][70]
+        
+        for n in [1,2,3,4,5,10,15,20,25,50,100,150,200]
+        {
+            DLog("With n = \(n)")
+            
+            let m = Double(n) * π / (testDisk.windHtFactor * testDisk.windHt)
+            
+            let r1 = Double(testDisk.diskRect.origin.x)
+            let r2 = r1 + Double(testDisk.diskRect.size.width)
+            let r3 = Double(testDisk2.diskRect.origin.x)
+            let r4 = r3 + Double(testDisk2.diskRect.size.width)
+            let rc = testDisk.coreRadius
+            
+            let x1 = m * r1
+            let x2 = m * r2
+            let x3 = m * r3
+            let x4 = m * r4
+            let xc = m * rc
+            
+            // let integralTI1 = IntegralOf_tI1_from(x1, toB: x2)
+            // let integralTK1 = IntegralOf_tK1_from(x1, toB: x2)
+            
+            // Old Way
+            let oldWay = (testDisk2.C(n) * IntegralOf_tI1_from(x1, toB: x2) + testDisk2.D(n) * IntegralOf_tK1_from(x1, toB: x2))
+            let CnOld = testDisk2.C(n)
+            let CnNew = exp(-x3) * ScaledIntegralOf_tK1_from(x3, toB: x4)
+            let firstTermOldWay = testDisk2.C(n) * IntegralOf_tI1_from(x1, toB: x2)
+            let firstTermNewWay = exp(-x3+x1) * ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
+            
+            let outerExp = exp(2.0 * xc - x3 - x1)
+            let innerExp = exp(-2.0 * xc + 2.0 * x1)
+            
+            let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
+            let secondProduct = testDisk2.ScaledD(n) * ScaledIntegralOf_tK1_from(x1, toB: x2)
+            let insideTerm = innerExp * firstProduct + secondProduct
+            let newWay = outerExp * insideTerm
+            
+            
+            
+            // let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
+            
+            DLog("Old: \(oldWay), New: \(newWay)")
+            
+        }
+        
+        
         
         // Now we'll set up the shunt capacitances.
         // TODO: Make the radial capacitive distibution more realistic for coils of unequal heights (eg: tapping windings)

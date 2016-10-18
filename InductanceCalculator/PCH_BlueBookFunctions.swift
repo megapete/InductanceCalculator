@@ -14,12 +14,40 @@ let relError = 1.0E-4
 
 func IntegralOf_tL1_from0_to(_ b:Double) -> Double
 {
-    return (-b * M0(b)) - (b * b / π) + IntegralOf_M0_from0_to(b) + IntegralOf_tI1_from0_to(b)
+    let firstTerm = (-b * M0(b))
+    let secondterm = -(b * b / π)
+    let thirdTerm = IntegralOf_M0_from0_to(b)
+    let fourthTerm = IntegralOf_tI1_from0_to(b)
+
+    // DLog("First: \(firstTerm) Second: \(secondterm) Third: \(thirdTerm) Fourth: \(fourthTerm)")
+    
+    return firstTerm + secondterm + thirdTerm + fourthTerm //(-b * M0(b)) - (b * b / π) + IntegralOf_M0_from0_to(b) + IntegralOf_tI1_from0_to(b)
 }
 
 func IntegralOf_tL1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tL1_from0_to(toB) - IntegralOf_tL1_from0_to(a)
+}
+
+func AlternateIntegralOf_tL1_from(_ a:Double, toB:Double) -> Double
+{
+    // More "mathematical" way of calculating the integral
+    let b = toB
+    let nonIntegralSum = a * M0(a) - b * M0(b) + (a*a - b*b) / π
+    let m0integral = IntegralOfM0_from(a, toB: b)
+    let i1integral = exp(a) * ScaledIntegralOf_tI1_from(a, toB: b)
+    
+    return nonIntegralSum + m0integral + i1integral
+}
+
+func PartialScaledIntegralOf_tL1_from(_ a:Double, toB b:Double) -> (Double, Double)
+{
+    // return a 2-tuple where the first number is unscaled and the second is scaled to exp(a)
+    let nonIntegralSum = a * M0(a) - b * M0(b) + (a*a - b*b) / π
+    let m0integral = IntegralOfM0_from(a, toB: b)
+    let scaledI1integral = ScaledIntegralOf_tI1_from(a, toB: b)
+    
+    return (nonIntegralSum + m0integral, scaledI1integral)
 }
 
 func IntegralOf_tI1_from0_to(_ b:Double) -> Double
@@ -72,7 +100,9 @@ func IntegralOf_tK1_from0_to(_ b:Double) -> Double
     let Rk1 = gsl_sf_bessel_K1_scaled(b)
     let eBase = exp(-b)
     
-    return (π / 2.0) * (1.0 - b * eBase * (M1(b) * Rk0 + M0(b) * Rk1))
+    let secondTerm = b * eBase * (M1(b) * Rk0 + M0(b) * Rk1)
+    
+    return (π / 2.0) * (1.0 - secondTerm)
 }
 
 func IntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
@@ -262,4 +292,9 @@ func IntegralOf_M0_from0_to(_ b:Double) -> Double
     }
     
     return result * 2.0 / π
+}
+
+func IntegralOfM0_from(_ a:Double, toB b:Double) -> Double
+{
+    return IntegralOf_M0_from0_to(b) - IntegralOf_M0_from0_to(a)
 }

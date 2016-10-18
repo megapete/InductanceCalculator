@@ -206,6 +206,24 @@ class PCH_DiskSection:Hashable {
         return result
     }
     
+    func ScaledF(_ n:Int) -> Double
+    {
+        // return Rf where F = exp(2.0 * xc - x1) * Rf (xc and x1 are functions of n)
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = (Double(n) * π / useWindht)
+        
+        let x1 = m * Double(self.diskRect.origin.x)
+        let xc = m * self.coreRadius
+        
+        let exponent = 2.0 * xc - x1
+        
+        let result = (ScaledD(n) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
+        
+        return result
+        
+    }
+    
     /// BlueBook function Gn
     func G(_ n:Int) -> Double
     {
@@ -247,6 +265,7 @@ class PCH_DiskSection:Hashable {
         
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
+        let rc = self.coreRadius
         
         var result = (π * µ0 * N1 * N1 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         
@@ -271,8 +290,27 @@ class PCH_DiskSection:Hashable {
             
             let x1 = m * r1;
             let x2 = m * r2;
+            let xc = m * rc;
             
-            currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
+            // After much mathematical manipulation and using scaled versions of the I and K functions, this is the most accurate method I came up with for calculating each iteration of the sum (the old method follows but is commented out). I have used a bunch of let statements for the different components of the equation to help debugging
+            
+            // The scaled version of Fn returns the remainder Rf where Fn = exp(2.0 * xc - x1) * Rf
+            let scaledFn = self.ScaledF(n)
+            
+            // the exponent after combining the two scaled remainders is (2.0 * xc - 2.0 * x1)
+            let exponent = 2.0 * (xc - x1)
+            
+            let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
+            
+            let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
+            let mult = self.E(n) - π / 2.0
+            
+            let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
+            
+            currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m)) * newWay
+            
+            // Old way
+            // currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
         }
         
         // cool way to get the sum of the values in an array
@@ -297,6 +335,7 @@ class PCH_DiskSection:Hashable {
         
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
+        let rc = self.coreRadius
         
         var result:Double
         
@@ -334,20 +373,26 @@ class PCH_DiskSection:Hashable {
             
             let x1 = m * r1;
             let x2 = m * r2;
+            let xc = m * rc;
             
-            let selfJ = self.J(n)
-            let otherJ = otherDisk.J(n)
-            let mPow4 = gsl_pow_4(m)
-            let fTerm = selfJ * otherJ / mPow4
             
-            if fabs(fTerm) < 1.0E-6
-            {
-                DLog("n: \(n) SelfJ: \(selfJ); OtherJ: \(otherJ); mPow4: \(mPow4) First term: \(fTerm)")
-            }
             
             if (isSameRadialPosition)
             {
-                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
+                // This uses the same "scaled" version of the iteration step as the SelfInductance() function above. See there for more comments.
+                
+                let scaledFn = self.ScaledF(n)
+                let exponent = 2.0 * (xc - x1)
+                let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
+                
+                let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
+                let mult = self.E(n) - π / 2.0
+                
+                let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
+                
+                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m)) * newWay
+                
+                // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
             }
             else
             {

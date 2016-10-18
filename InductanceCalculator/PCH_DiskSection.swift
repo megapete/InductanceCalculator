@@ -335,6 +335,8 @@ class PCH_DiskSection:Hashable {
         
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
+        let r3 = Double(otherDisk.diskRect.origin.x)
+        let r4 = r3 + Double(otherDisk.diskRect.size.width)
         let rc = self.coreRadius
         
         var result:Double
@@ -356,7 +358,7 @@ class PCH_DiskSection:Hashable {
         
         // More testing: putting this in a simple for-loop with 16 LV sections and 60 HV sections took around 20 seconds in the time profiler. Using dispatch_apply(0 reduce this to around 6 seconds !!!
         
-        let convergenceIterations =  /* 150 */ (self.diskRect.size.width < 0.025 || otherDisk.diskRect.size.width < 0.025 ? (self.diskRect.size.width < 0.01 || otherDisk.diskRect.size.width < 0.01 ? 100 : 150) : 200)
+        let convergenceIterations =  200 // (self.diskRect.size.width < 0.025 || otherDisk.diskRect.size.width < 0.025 ? (self.diskRect.size.width < 0.01 || otherDisk.diskRect.size.width < 0.01 ? 100 : 150) : 200)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
@@ -373,9 +375,9 @@ class PCH_DiskSection:Hashable {
             
             let x1 = m * r1;
             let x2 = m * r2;
+            let x3 = m * r3
+            let x4 = m * r4
             let xc = m * rc;
-            
-            
             
             if (isSameRadialPosition)
             {
@@ -392,15 +394,26 @@ class PCH_DiskSection:Hashable {
                 
                 currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m)) * newWay
                 
+                // The old, non-precise way
                 // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
             }
             else
             {
-                // let termValueNew = [(self.J(n) * otherDisk.J(n)) / gsl_pow_4(m), otherDisk.C(n), IntegralOf_tI1_from(x1, toB: x2), otherDisk.D(n), IntegralOf_tK1_from(x1, toB: x2)]
+                // This uses the same "scaled" version of the iteration step, similarly to the SelfInductance() function above. See there for more comments.
                 
-                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
+                let outerExp = exp(2.0 * xc - x3 - x1)
+                let innerExp = exp(-2.0 * xc + 2.0 * x1)
                 
-                // termValue = termValueNew
+                let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
+                let secondProduct = otherDisk.ScaledD(n) * ScaledIntegralOf_tK1_from(x1, toB: x2)
+                let insideTerm = innerExp * firstProduct + secondProduct
+                let newWay = outerExp * insideTerm
+
+                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m)) * newWay
+                
+                // The old, imprecise way
+                // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
+                
             }
             
             

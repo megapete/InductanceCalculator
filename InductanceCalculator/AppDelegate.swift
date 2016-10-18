@@ -114,7 +114,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.03, trtol = 7
         // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
-        let useNumCoilSections = [2, 66, 80]
+        let useNumCoilSections = [98, 66, 80]
         
         let zBot = [2.5 * 25.4/1000.0, 2.5 * 25.4/1000.0, 7.792 * 25.4/1000.0]
         let zHt = [50.944 * 25.4/1000.0, 51.055 * 25.4/1000.0, 40.465 * 25.4/1000.0]
@@ -260,6 +260,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nodeSerialNumber += 1
         }
         
+        /*
         // Testing blueBook functions
         // The disks to test
         let testDisk = coils[hvCoil][65]
@@ -308,7 +309,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             DLog("Old: \(oldWay), New: \(newWay)")
             
         }
-        
+        */
         
         
         // Now we'll set up the shunt capacitances.

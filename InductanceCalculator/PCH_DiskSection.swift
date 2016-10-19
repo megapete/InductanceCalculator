@@ -174,13 +174,13 @@ class PCH_DiskSection:Hashable {
         let x1 = m * Double(self.diskRect.origin.x)
         
         // Old way
-        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
-        let xc = m * self.coreRadius
+        // let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        // let xc = m * self.coreRadius
         
         // Alternate method from BlueBook 2nd Ed., page 267
-        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
-        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
-        let eBase = exp(2.0 * xc)
+        // let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        // let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        // let eBase = exp(2.0 * xc)
  
         let result = AlternateD(n) - IntegralOf_tI1_from0_to(x1)
         
@@ -242,19 +242,6 @@ class PCH_DiskSection:Hashable {
         return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
     }
     
-    func En_x_IntegralOf_tI1(_ n:Int) -> Double
-    {
-        // This function uses "scaled" techniques to try and get a better precision answer for "E(n)*IntegralOf_tI1" statements. It should only be used if both E and the Integral refer to coil sections with the same radial position (ie: all self-inductances and mutual-inductances to other sections in the same coil)
-        
-        let useWindht = windHtFactor * self.windHt
-        let m = (Double(n) * π / useWindht)
-        let x1 = m * Double(self.diskRect.origin.x)
-        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
-        
-        let result = 0.0
-        
-        return result
-    }
     
     /// Rabins' method for calculating self-inductance
     func SelfInductance() -> Double

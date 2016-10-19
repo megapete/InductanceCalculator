@@ -17,9 +17,6 @@ import Accelerate
 */
 func GetFFT(_ waveForm:[Double]) -> [Complex]
 {
-    // Get the number of points in the signal
-    let arrayN = waveForm.count
-    
-    
+        
     return [Complex(real: 0,imag: 0)]
 }

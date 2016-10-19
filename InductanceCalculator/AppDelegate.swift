@@ -17,74 +17,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
         
-        // Testing Bluebook functions
-        
-        
-        /*
-        var lvRect = NSMakeRect(19.72 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
-        var hvRect = NSMakeRect(25.639 / 2.0 * 25.4/1000.0, 2.6 * 25.4/1000.0, 1.913 * 25.4/1000.0, 35.454 * 25.4/1000.0)
-        
-        var J = 209.0 * 300.0 / Double(lvRect.size.width * lvRect.size.height)
-        
-        var lv = PCH_DiskSection(diskRect: lvRect, N: 209, J: -J , windHt: 1.08, coreRadius: 0.225)
-        var hv = PCH_DiskSection(diskRect: hvRect, N: 209, J: J, windHt: 1.08, coreRadius: 0.225)
-        
-        var L1 = lv.SelfInductance()
-        var L2 = hv.SelfInductance()
-        var M12 = lv.MutualInductanceTo(hv)
-        
-        // Simplified calculation for transformers where N1 = N2
-        var lkInd = L1 + L2 - 2.0 * M12
-        
-        DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-
-*/
-/*
-        let lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, 2.965 * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
-        let lv = PCH_DiskSection(diskRect: lvRect, N: 16.0, J: -16.0 * 481.13 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.141, secData:PCH_SectionData(sectionID: "LV"))
-        let hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
-        let hv = PCH_DiskSection(diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.4056 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.141, secData:PCH_SectionData(sectionID: "HV"))
-        
-        let L1 = lv.SelfInductance()
-        let L2 = hv.SelfInductance()
-        let M12 = lv.MutualInductanceTo(hv)
-        let M21 = hv.MutualInductanceTo(lv)
-        
-        // The actual calculation for two-winding transformers (exactly right!!!)
-        // This is the leakage inductance looking from the L1 (in this case LV) side
-        let lkInd = L1 + gsl_pow_2(16.0 / 3200.0) * L2 - 2.0 * (16.0 / 3200.0) * M12
-        
-        DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-*/
-        // Test FFT
-        /*
-        var testArray = [Double](repeating: 0.0, count: 8)
-        testArray[0] = 1.0
-        let fftTest = GetFFT(testArray)
-        
-        for i in 0..<8
-        {
-            DLog("FFT[\(i)]: \(fftTest[i])")
-        }
-        */
-        
-        /*
-        var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 * 25.4/1000)
-        let lv = PCH_DiskSection(coilRef: 0, diskRect: lvRect, N: 16.0, J: 481.125 * 16.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV", serNum:0, inNode:0, outNode:1))
-        var hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 * 25.4/1000)
-        let hv = PCH_DiskSection(coilRef:1, diskRect: hvRect, N: 3200.0, J: 3200.0 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV", serNum:1, inNode:2, outNode:3))
-        
-        let L1 = lv.SelfInductance()
-        let L2 = hv.SelfInductance()
-        let M12 = lv.MutualInductanceTo(hv)
-        
-        let lkInd = L2 + gsl_pow_2(3200.0 / 16.0) * L1 - 2.0 * (3200.0 / 16.0) * M12
-        // var magEnergy = lkInd * 481.125 * 481.125 / 2.0
-        
-        
-        DLog("Leakage reactance (ohms): \(lkInd * 2.0 * π * 60.0)")
-        */
-        
         // Create the special "ground" section. By convention, it has a serial number of -1.
         let gndSection = PCH_DiskSection(coilRef: -1, diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
         
@@ -100,8 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let windowHeight = 1.56
         let coreRadius = 0.51562 / 2.0
         
-        // Overly simplistic way to take care of eddy losses at higher frequencies (the 3000 comes from the Bluebook)
-        let resFactor = 2000.0 // 3000.0
+        // Overly simplistic way to take care of eddy losses at higher frequencies (the "max 3000" comes from the Bluebook)
+        let resFactor = 2000.0 // max 3000.0
         
         // Set the index numbers for the three coils we'll be modeling. NOTE: The coil index numbers MUST be in order from closest-to-core (0) to furthest-from-core.
         let lvCoil = 0
@@ -112,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let numCoilSections = [98, 66, 80]
         
-        // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, reltol = 0.03, trtol = 7
+        // This works with the following LTSpice settings: Method = Gear, abstol = 1E-6, vntol = 1E-4 reltol = 0.02, trtol = 7
         // (with inspiration from from: http://www.intusoft.com/articles/converg.pdf)
         let useNumCoilSections = [98, 66, 80]
         
@@ -260,58 +192,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             nodeSerialNumber += 1
         }
         
-        /*
-        // Testing blueBook functions
-        // The disks to test
-        let testDisk = coils[hvCoil][65]
-        let testDisk2 = coils[rvCoil][70]
-        
-        for n in [1,2,3,4,5,10,15,20,25,50,100,150,200]
-        {
-            DLog("With n = \(n)")
-            
-            let m = Double(n) * π / (testDisk.windHtFactor * testDisk.windHt)
-            
-            let r1 = Double(testDisk.diskRect.origin.x)
-            let r2 = r1 + Double(testDisk.diskRect.size.width)
-            let r3 = Double(testDisk2.diskRect.origin.x)
-            let r4 = r3 + Double(testDisk2.diskRect.size.width)
-            let rc = testDisk.coreRadius
-            
-            let x1 = m * r1
-            let x2 = m * r2
-            let x3 = m * r3
-            let x4 = m * r4
-            let xc = m * rc
-            
-            // let integralTI1 = IntegralOf_tI1_from(x1, toB: x2)
-            // let integralTK1 = IntegralOf_tK1_from(x1, toB: x2)
-            
-            // Old Way
-            let oldWay = (testDisk2.C(n) * IntegralOf_tI1_from(x1, toB: x2) + testDisk2.D(n) * IntegralOf_tK1_from(x1, toB: x2))
-            let CnOld = testDisk2.C(n)
-            let CnNew = exp(-x3) * ScaledIntegralOf_tK1_from(x3, toB: x4)
-            let firstTermOldWay = testDisk2.C(n) * IntegralOf_tI1_from(x1, toB: x2)
-            let firstTermNewWay = exp(-x3+x1) * ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
-            
-            let outerExp = exp(2.0 * xc - x3 - x1)
-            let innerExp = exp(-2.0 * xc + 2.0 * x1)
-            
-            let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
-            let secondProduct = testDisk2.ScaledD(n) * ScaledIntegralOf_tK1_from(x1, toB: x2)
-            let insideTerm = innerExp * firstProduct + secondProduct
-            let newWay = outerExp * insideTerm
-            
-            
-            
-            // let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
-            
-            DLog("Old: \(oldWay), New: \(newWay)")
-            
-        }
-        */
-        
-        
         // Now we'll set up the shunt capacitances.
         // TODO: Make the radial capacitive distibution more realistic for coils of unequal heights (eg: tapping windings)
         
@@ -375,6 +255,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         {
             let nDisk = cArray.remove(at: 0)
             
+            DLog("Checking \(nDisk.data.sectionID)")
+            
             for otherDisk in cArray
             {
                 let mutInd = fabs(nDisk.MutualInductanceTo(otherDisk))
@@ -398,81 +280,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
+        
         /*
-        var lvSectionArray = [PCH_DiskSection]()
-        // do the lv first
-        var lvZ = (2.25 + 1.913/2.0) * 25.4/1000.0
-        let lvZStep = 32.065 / Double(lvCoilSections) * 25.4/1000
-        let lvI = 481.125
-        let lvN = 16.0 / Double(lvCoilSections)
-        let lvcoilID = "LV"
-        let lvResPerSection = 1.3909E-3 * lvN * resFactor
-        let lvSerCapPerSection = 1.8072E-10 / lvN
-        let lvShuntCapPerSection = (3.9534E-11 + 3.2097E-11) * lvN
-        
-        
-        for i in 0 ..< lvCoilSections
-        {
-            let nextSectionRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, CGFloat(lvZ), 0.296 * 25.4/1000.0, CGFloat(lvZStep))
-            
-            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", lvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
-            
-            sectionSerialNumber += 1
-            nodeSerialNumber += 1
-            
-            nextSectionData.resistance = lvResPerSection
-            nextSectionData.seriesCapacitance = lvSerCapPerSection
-            nextSectionData.shuntCapacitances["0"] = lvShuntCapPerSection
-            nextSectionData.shuntCaps[gndSection] = lvShuntCapPerSection
-            
-            let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: lvN, J: lvN * lvI / Double(nextSectionRect.width * nextSectionRect.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData: nextSectionData)
-            
-            nextSection.data.selfInductance = nextSection.SelfInductance()
-            
-            coilSections.append(nextSection)
-            lvSectionArray.append(nextSection)
-            
-            lvZ += lvZStep
-        }
-        
-        nodeSerialNumber += 1
-        // And now the HV
-        var hvZ = 2.75 * 25.4/1000.0
-        let hvZStep = 32.495 / Double(hvCoilSections) * 25.4/1000
-        let hvI = 2.406
-        let hvN = 3200.0 / Double(hvCoilSections)
-        let hvSections = 60.0 / Double(hvCoilSections)
-        let hvcoilID = "HV"
-        let hvResPerSection = 0.19727 * hvSections * resFactor
-        let hvSerCapPerSection = 1.6185E-9 / hvSections
-        let hvShuntCapPerSection = (6.5814E-12 + 1.0259E-22) * hvSections
-        
-        var hvSectionArray = [PCH_DiskSection]()
-        for i in 0 ..< hvCoilSections
-        {
-            let nextSectionRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, CGFloat(hvZ), 5.148 * 25.4/1000.0, CGFloat(hvZStep))
-            
-            var nextSectionData = PCH_SectionData(sectionID: String(format: "%@%03d", hvcoilID, i+1), serNum:sectionSerialNumber, inNode:nodeSerialNumber, outNode:nodeSerialNumber+1)
-            sectionSerialNumber += 1
-            nodeSerialNumber += 1
-            
-            nextSectionData.resistance = hvResPerSection
-            nextSectionData.seriesCapacitance = hvSerCapPerSection
-            nextSectionData.shuntCapacitances["0"] = hvShuntCapPerSection
-            nextSectionData.shuntCaps[gndSection] = hvShuntCapPerSection
-            
-            let nextSection = PCH_DiskSection(diskRect: nextSectionRect, N: hvN, J: hvN * hvI / Double(nextSectionRect.width * nextSectionRect.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData: nextSectionData)
-            
-            nextSection.data.selfInductance = nextSection.SelfInductance()
-            
-            coilSections.append(nextSection)
-            hvSectionArray.append(nextSection)
-            
-            hvZ += hvZStep
-        }
-        
-        
-        
+         
+         This commented-out part was my stab at implementing the Bluebook method of impulse simulation. It is kept here because it "sort-of" worked even though the inductance calculations were inaccurate. I may revist this at some point in the future if I can't get things to work with ngspice
          
         // Create the inductance matrix, resistance matrix, and capacitance (base) matrix
         
@@ -733,134 +544,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("I: \(I)")
         */
         
-        // NSApplication.sharedApplication().terminate(self)
-
-        // inductance check (debugging)
-        // We have confirmed that the self-inductances are correct when comparing the value calculated with each coil as a whole with the value calculated from the individual disk self- and mutual-inductances. We now check the leakage inductance between the coils (from the HV point of view).
-        /*
-        var L = [Double]()
-        var sumL = 0.0
-        var M = [Double]()
-        var sumM = 0.0
-        let turnsRatio = 3200.0 / 16.0
-        var lvHVMuts = [Double]()
         
-        for var i=0; i<coilSections.count; i++
-        {
-            let nextSection = coilSections[i]
-            
-            L.append(nextSection.data.selfInductance)
-            
-            let sID = nextSection.data.sectionID
-            
-            var useTurnsRatio = 1.0
-            if (sID.substringWithRange(Range<String.Index>(start:sID.startIndex, end:sID.startIndex.advancedBy(2))) != "HV")
-            {
-                useTurnsRatio = turnsRatio
-            }
-            
-            sumL += useTurnsRatio * useTurnsRatio * nextSection.data.selfInductance
-            
-            for nextMutInd in nextSection.data.mutualInductances
-            {
-                let key = nextMutInd.0
-                
-                var useMratio = useTurnsRatio
-                
-                if (key.substringWithRange(Range<String.Index>(start:key.startIndex, end: key.startIndex.advancedBy(2))) != sID.substringWithRange(Range<String.Index>(start:sID.startIndex, end:sID.startIndex.advancedBy(2))))
-                {
-                    useMratio = -turnsRatio
-                    M.append(nextMutInd.1)
-                    sumM += useMratio * nextMutInd.1
-                }
-                else
-                {
-                    // The LV coil self-inductance includes the LV disk-disk mutual inductances in its calculation, so their mutual inductances must also be multiplied by the square of the turns ratio
-                    useMratio *= useMratio
-                    lvHVMuts.append(nextMutInd.1)
-                    L.append(nextMutInd.1)
-                    sumL += useMratio * nextMutInd.1
-                }
-            }
-            
-        }
-        
-        var testL = 0.0
-        for nextValue in lvHVMuts
-        {
-            testL += nextValue
-        }
-        for nextValue in L
-        {
-            testL += nextValue
-        }
-        
-        DLog("LV self-inductance: \(gsl_pow_2(3200.0 / 16.0) * L1)")
-        DLog("HV self-inductance: \(L2)")
-        DLog("Sum of self inductances: \(L2 + gsl_pow_2(3200.0 / 16.0) * L1)")
-        DLog("LV-HV Mutual Inductance: \(3200.0 / 16.0 * M12)")
-        
-        DLog("Leakage Inductance: \(lkInd)")
-        DLog("SumL: \(sumL); SumM: \(sumM); Lcalc: \(sumL + sumM)")
-        DLog("Diff: \(lkInd - (sumM + sumL))")
-        
-        */
-        
-        // return
-        
-        /*
-        var lvRect = NSMakeRect(14.1 / 2.0 * 25.4/1000.0, (2.25 + 1.913/2.0) * 25.4/1000.0, 0.296 * 25.4/1000.0, 32.065 / 2.0 * 25.4/1000)
-        let lv1 = PCH_DiskSection(diskRect: lvRect, N: 8.0, J: 481.125 * 8.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV001"))
-        lvRect = lvRect.offsetBy(dx: 0.0, dy: 32.065 / 2.0 * 25.4 / 1000.0)
-        let lv2 = PCH_DiskSection(diskRect: lvRect, N: 8.0, J: 481.125 * 8.0 / Double(lvRect.size.width * lvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "LV002"))
-        
-        var hvRect = NSMakeRect(25.411 / 2.0 * 25.4/1000.0, 2.75 * 25.4/1000.0, 5.148 * 25.4/1000.0, 32.495 / 2.0 * 25.4/1000.0)
-        let hv1 = PCH_DiskSection(diskRect: hvRect, N: 1600.0, J: 1600 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV001"))
-        hvRect = hvRect.offsetBy(dx: 0.0, dy: 32.495 / 2.0 * 25.4/1000.0)
-        let hv2 = PCH_DiskSection(diskRect: hvRect, N: 1600.0, J: 1600 * 2.406 / Double(hvRect.size.width * hvRect.size.height), windHt: 1.1, coreRadius: 0.282 / 2.0, secData:PCH_SectionData(sectionID: "HV002"))
-        
-        let resFactor = 3000.0
-        
-        lv1.data.resistance = 1.3909E-3 * 8.0 * resFactor
-        lv1.data.selfInductance = lv1.SelfInductance()
-        lv1.data.seriesCapacitance = 1.8072E-10 / 8.0
-        lv1.data.shuntCapacitances["0"] = (3.9534E-11 + 3.2097E-11) * 8.0
-        
-        lv2.data.resistance = 1.3909E-3 * 8.0 * resFactor
-        lv2.data.selfInductance = lv2.SelfInductance()
-        lv2.data.seriesCapacitance = 1.8072E-10 / 8.0
-        lv2.data.shuntCapacitances["0"] = (3.9534E-11 + 3.2097E-11) * 8.0
-        
-        hv1.data.resistance = 0.19727 * 30.0 * resFactor
-        hv1.data.selfInductance = hv1.SelfInductance()
-        hv1.data.seriesCapacitance = 1.6185E-9 / 30.0
-        hv1.data.shuntCapacitances["0"] = (6.5814E-12 + 1.0259E-22) * 30.0
-        
-        hv2.data.resistance = 0.19727 * 30.0 * resFactor
-        hv2.data.selfInductance = hv2.SelfInductance()
-        hv2.data.seriesCapacitance = 1.6185E-9 / 30.0
-        hv2.data.shuntCapacitances["0"] = (6.5814E-12 + 1.0259E-22) * 30.0
-        
-        lv1.data.mutualInductances[lv2.data.sectionID] = lv1.MutualInductanceTo(lv2)
-        lv1.data.mutIndCoeff[lv2.data.sectionID] = lv1.data.mutualInductances[lv2.data.sectionID]! / sqrt(lv1.data.selfInductance * lv2.data.selfInductance)
-        
-        lv1.data.mutualInductances[hv1.data.sectionID] = lv1.MutualInductanceTo(hv1)
-        lv1.data.mutIndCoeff[hv1.data.sectionID] = lv1.data.mutualInductances[hv1.data.sectionID]! / sqrt(lv1.data.selfInductance * hv1.data.selfInductance)
-        
-        lv1.data.mutualInductances[hv2.data.sectionID] = lv1.MutualInductanceTo(hv2)
-        lv1.data.mutIndCoeff[hv2.data.sectionID] = lv1.data.mutualInductances[hv2.data.sectionID]! / sqrt(lv1.data.selfInductance * hv2.data.selfInductance)
-        
-        lv2.data.mutualInductances[hv1.data.sectionID] = lv2.MutualInductanceTo(hv1)
-        lv2.data.mutIndCoeff[hv1.data.sectionID] = lv2.data.mutualInductances[hv1.data.sectionID]! / sqrt(lv2.data.selfInductance * hv1.data.selfInductance)
-        
-        lv2.data.mutualInductances[hv2.data.sectionID] = lv2.MutualInductanceTo(hv2)
-        lv2.data.mutIndCoeff[hv2.data.sectionID] = lv2.data.mutualInductances[hv2.data.sectionID]! / sqrt(lv2.data.selfInductance * hv2.data.selfInductance)
-        
-        hv1.data.mutualInductances[hv2.data.sectionID] = hv1.MutualInductanceTo(hv2)
-        hv1.data.mutIndCoeff[hv2.data.sectionID] = hv1.data.mutualInductances[hv2.data.sectionID]! / sqrt(hv1.data.selfInductance * hv2.data.selfInductance)
-        
-        let coilSections = [lv1,lv2,hv1,hv2]
-*/
         // SPICE-FILE STUFF FROM HERE ON
         
         var fString = "Job 2201 - HV Shot in tap position 1 (highest voltage)\n"
@@ -902,7 +586,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fString += String(format: "* Definitions for section: %@\n", nextSectionID)
             fString += selfIndName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance)
             // Calculate the resistance that we need to put in parallel with the inductance to reducing ringing (according to ATPDraw: ind * 2.0 * 7.5 * 1000.0 / 1E9). Note that the model still rings in LTSpice, regardless of how low I set this value.
-            fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 100.0 / 1.0E-9)
+            fString += indParResName + " " + inNode + " " + midNode + String(format: " %.4E\n", nextDisk.data.selfInductance * 2.0 * 7.5 * 1000.0 / 1.0E-9)
 
             fString += resName + " " + midNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.resistance)
             fString += seriesCapName + " " + inNode + " " + outNode + String(format: " %.4E\n", nextDisk.data.seriesCapacitance)

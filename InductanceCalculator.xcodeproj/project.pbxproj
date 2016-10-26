@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D3015F9E1C7CE8A300BDDBF4 /* PCH_FFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3015F9D1C7CE8A300BDDBF4 /* PCH_FFT.swift */; };
+		D3109D9E1DC1016E00DF8BAA /* CoreInputDlog.xib in Resources */ = {isa = PBXBuildFile; fileRef = D3109D9D1DC1016E00DF8BAA /* CoreInputDlog.xib */; };
 		D38131401C72A5350024B558 /* PCH_Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = D381313F1C72A5350024B558 /* PCH_Matrix.swift */; };
 		D3E0F6AE1C3012A400C67699 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */; };
 		D3E0F6B01C3012A400C67699 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3E0F6AF1C3012A400C67699 /* Assets.xcassets */; };
@@ -22,6 +23,7 @@
 
 /* Begin PBXFileReference section */
 		D3015F9D1C7CE8A300BDDBF4 /* PCH_FFT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_FFT.swift; sourceTree = "<group>"; };
+		D3109D9D1DC1016E00DF8BAA /* CoreInputDlog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CoreInputDlog.xib; sourceTree = "<group>"; };
 		D381313F1C72A5350024B558 /* PCH_Matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PCH_Matrix.swift; sourceTree = "<group>"; };
 		D3E0F6AA1C3012A300C67699 /* InductanceCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InductanceCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3E0F6AD1C3012A400C67699 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 				D3E0F6BE1C30163700C67699 /* PCH_DiskSection.swift */,
 				D3E0F6C91C31676D00C67699 /* PCH_SectionData.swift */,
 				D381313F1C72A5350024B558 /* PCH_Matrix.swift */,
+				D3109D9D1DC1016E00DF8BAA /* CoreInputDlog.xib */,
 				D3E0F6AF1C3012A400C67699 /* Assets.xcassets */,
 				D3E0F6B11C3012A400C67699 /* MainMenu.xib */,
 				D3E0F6B41C3012A400C67699 /* Info.plist */,
@@ -144,6 +147,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3109D9E1DC1016E00DF8BAA /* CoreInputDlog.xib in Resources */,
 				D3E0F6B01C3012A400C67699 /* Assets.xcassets in Resources */,
 				D3E0F6B31C3012A400C67699 /* MainMenu.xib in Resources */,
 			);

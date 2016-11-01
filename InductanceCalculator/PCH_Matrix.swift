@@ -1851,6 +1851,31 @@ class PCH_Matrix:CustomStringConvertible
     }
     
     /**
+        Set an entire row of a matrix to the values in a vector.
+    */
+    
+    func SetRow(_ rowNum:Int, vector:PCH_Matrix)
+    {
+        ZAssert(self.matrixPrecision == vector.matrixPrecision, message: "Vector's precision must match matrix precision")
+        ZAssert(rowNum < self.numRows && rowNum >= 0, message: "Illegal row number")
+        ZAssert(vector.numCols == 1, message: "The vector parameter must have only one column 9ie: it must be a vector)")
+        ZAssert(self.numCols == vector.numRows, message: "The matrix must have the same number of columns as elements in the vector")
+        
+        for i in 0..<self.numCols
+        {
+            if (self.matrixPrecision == precisions.doublePrecision)
+            {
+                let number:Double = vector[i, 0]
+                self[rowNum, i] = number
+            }
+            else
+            {
+                ALog("This function is not implemented for non-double precisions")
+            }
+        }
+    }
+    
+    /**
         Set an entire row in a double-precision matrix to the values passed in via buffer. Usually, buffer.count is equal to self.numCols. If buffer.count < self.numCols, then the rest of the row is padded with zeroes. If buffer.count > self.numCols, only the first self.numCols values are set.
         
         - parameter: rowNum: The row that will be replaced by the passed-in buffer
@@ -1960,6 +1985,8 @@ class PCH_Matrix:CustomStringConvertible
             }
         }
     }
+    
+    
     
     /**
         Add an entire row to a double-precision matrix.

@@ -39,7 +39,7 @@ class PCH_DiskSection:Hashable {
     let diskRect:NSRect
     
     /// A factor for "fudging" some calculations. The BlueBook says that a factor of three gives better results.
-    let windHtFactor = 3.0
+    // let windHtFactor = 3.0
     
     /// The electrical data associated with the section
     var data:PCH_SectionData
@@ -65,17 +65,17 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function J0
-    func J0() -> Double
+    func J0(_ windHtFactor:Double) -> Double
     {
-        let useWindht = self.windHtFactor * self.windHt
+        let useWindht = windHtFactor * self.windHt
         
         return self.J * Double(self.diskRect.size.height) / useWindht
     }
     
     /// BlueBook function Jn
-    func J(_ n:Int) -> Double
+    func J(_ n:Int, windHtFactor:Double) -> Double
     {
-        let useWindht = self.windHtFactor * self.windHt
+        let useWindht = windHtFactor * self.windHt
         // let useOriginY = (useWindht - self.windHt) / 2.0 + Double(self.diskRect.origin.y)
         let useOriginY = Double(self.diskRect.origin.y)
         
@@ -83,7 +83,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Cn
-    func C(_ n:Int) -> Double
+    func C(_ n:Int, windHtFactor:Double) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = Double(n) * π / useWindht
@@ -95,7 +95,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Dn
-    func D(_ n:Int) -> Double
+    func D(_ n:Int, windHtFactor:Double) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let xc = (Double(n) * π / useWindht) * self.coreRadius
@@ -105,7 +105,7 @@ class PCH_DiskSection:Hashable {
         let Rk0 = gsl_sf_bessel_K0_scaled(xc)
         let eBase = exp(2.0 * xc)
         
-        let result = eBase * (Ri0 / Rk0) * self.C(n)
+        let result = eBase * (Ri0 / Rk0) * self.C(n, windHtFactor:windHtFactor)
     
         return result
         
@@ -118,7 +118,7 @@ class PCH_DiskSection:Hashable {
         */
     }
     
-    func ScaledD(_ n:Int) -> Double
+    func ScaledD(_ n:Int, windHtFactor:Double) -> Double
     {
         // returns Rd where D = exp(2.0 * xc - x1) * Rd (xc and x1 are functions of n)
         
@@ -137,7 +137,7 @@ class PCH_DiskSection:Hashable {
         return Ri0 / Rk0 * ScaledCn
     }
     
-    func AlternateD(_ n:Int) -> Double
+    func AlternateD(_ n:Int, windHtFactor:Double) -> Double
     {
         // The Dn function, using scaled methods
         
@@ -157,7 +157,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function En
-    func E(_ n:Int) -> Double
+    func E(_ n:Int, windHtFactor:Double) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let x2 = (Double(n) * π / useWindht) * Double(self.diskRect.origin.x + self.diskRect.size.width)
@@ -166,7 +166,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// BlueBook function Fn
-    func F(_ n:Int) -> Double
+    func F(_ n:Int, windHtFactor:Double) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = (Double(n) * π / useWindht)
@@ -182,14 +182,14 @@ class PCH_DiskSection:Hashable {
         // let Rk0 = gsl_sf_bessel_K0_scaled(xc)
         // let eBase = exp(2.0 * xc)
  
-        let result = AlternateD(n) - IntegralOf_tI1_from0_to(x1)
+        let result = AlternateD(n, windHtFactor:windHtFactor) - IntegralOf_tI1_from0_to(x1)
         
         return result
         
         // OLD return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) - IntegralOf_tI1_from0_to(x1)
     }
     
-    func AlternateF(_ n:Int) -> Double
+    func AlternateF(_ n:Int, windHtFactor:Double) -> Double
     {
         // Best method of calculating F (uses scaling techniques)
         
@@ -201,12 +201,12 @@ class PCH_DiskSection:Hashable {
         
         let exponent = 2.0 * xc - x1
         
-        let result = exp(exponent) * (ScaledD(n) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
+        let result = exp(exponent) * (ScaledD(n, windHtFactor:windHtFactor) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
         
         return result
     }
     
-    func ScaledF(_ n:Int) -> Double
+    func ScaledF(_ n:Int, windHtFactor:Double) -> Double
     {
         // return Rf where F = exp(2.0 * xc - x1) * Rf (xc and x1 are functions of n)
         
@@ -218,14 +218,14 @@ class PCH_DiskSection:Hashable {
         
         let exponent = 2.0 * xc - x1
         
-        let result = (ScaledD(n) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
+        let result = (ScaledD(n, windHtFactor:windHtFactor) - exp(x1 - exponent) * ScaledIntegralOf_tI1_from0_to(x1))
         
         return result
         
     }
     
     /// BlueBook function Gn
-    func G(_ n:Int) -> Double
+    func G(_ n:Int, windHtFactor:Double) -> Double
     {
         let useWindht = windHtFactor * self.windHt
         let m = (Double(n) * π / useWindht)
@@ -244,7 +244,7 @@ class PCH_DiskSection:Hashable {
     
     
     /// Rabins' method for calculating self-inductance
-    func SelfInductance() -> Double
+    func SelfInductance(_ windHtFactor:Double) -> Double
     {
         let I1 = self.J * Double(self.diskRect.size.width * self.diskRect.size.height) / self.N
         
@@ -273,7 +273,7 @@ class PCH_DiskSection:Hashable {
                 
             let n = i + 1
             
-            let m = Double(n) * π / (self.windHtFactor * self.windHt)
+            let m = Double(n) * π / (windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
@@ -282,7 +282,7 @@ class PCH_DiskSection:Hashable {
             // After much mathematical manipulation and using scaled versions of the I and K functions, this is the most accurate method I came up with for calculating each iteration of the sum (the old method follows but is commented out). I have used a bunch of let statements for the different components of the equation to help debugging
             
             // The scaled version of Fn returns the remainder Rf where Fn = exp(2.0 * xc - x1) * Rf
-            let scaledFn = self.ScaledF(n)
+            let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
             
             // the exponent after combining the two scaled remainders is (2.0 * xc - 2.0 * x1)
             let exponent = 2.0 * (xc - x1)
@@ -290,11 +290,11 @@ class PCH_DiskSection:Hashable {
             let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
             
             let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
-            let mult = self.E(n) - π / 2.0
+            let mult = self.E(n, windHtFactor:windHtFactor) - π / 2.0
             
             let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
             
-            currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m)) * newWay
+            currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
             
             // Old way
             // currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
@@ -307,7 +307,7 @@ class PCH_DiskSection:Hashable {
     }
     
     /// Rabins' methods for mutual inductances
-    func MutualInductanceTo(_ otherDisk:PCH_DiskSection) -> Double
+    func MutualInductanceTo(_ otherDisk:PCH_DiskSection, windHtFactor:Double) -> Double
     {
         /// If the inner radii of the two sections differ by less than 1mm, we assume that they are in the same radial position
         let isSameRadialPosition = fabs(Double(self.diskRect.origin.x - otherDisk.diskRect.origin.x)) <= 0.001
@@ -353,7 +353,7 @@ class PCH_DiskSection:Hashable {
             
             let n = i + 1
             
-            let m = Double(n) * π / (self.windHtFactor * self.windHt)
+            let m = Double(n) * π / (windHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
@@ -365,16 +365,16 @@ class PCH_DiskSection:Hashable {
             {
                 // This uses the same "scaled" version of the iteration step as the SelfInductance() function above. See there for more comments.
                 
-                let scaledFn = self.ScaledF(n)
+                let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
                 let exponent = 2.0 * (xc - x1)
                 let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
                 
                 let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
-                let mult = self.E(n) - π / 2.0
+                let mult = self.E(n, windHtFactor:windHtFactor) - π / 2.0
                 
                 let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
                 
-                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m)) * newWay
+                currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
                 
                 // The old, non-precise way
                 // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
@@ -387,11 +387,11 @@ class PCH_DiskSection:Hashable {
                 let innerExp = exp(-2.0 * xc + 2.0 * x1)
                 
                 let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
-                let secondProduct = otherDisk.ScaledD(n) * ScaledIntegralOf_tK1_from(x1, toB: x2)
+                let secondProduct = otherDisk.ScaledD(n, windHtFactor:windHtFactor) * ScaledIntegralOf_tK1_from(x1, toB: x2)
                 let insideTerm = innerExp * firstProduct + secondProduct
                 let newWay = outerExp * insideTerm
 
-                currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m)) * newWay
+                currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
                 
                 // The old, imprecise way
                 // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))

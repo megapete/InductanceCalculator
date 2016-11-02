@@ -14,9 +14,9 @@ internal func ==(lhs:PCH_DiskSection, rhs:PCH_DiskSection) -> Bool
     return (lhs.data.serialNumber == rhs.data.serialNumber)
 }
 
-class PCH_DiskSection:Hashable {
+class PCH_DiskSection:NSObject, NSCoding {
     
-    internal var hashValue: Int {
+    override var hashValue: Int {
         return self.data.serialNumber
     }
 
@@ -62,6 +62,32 @@ class PCH_DiskSection:Hashable {
         self.windHt = windHt
         self.coreRadius = coreRadius
         self.data = secData
+    }
+    
+    // Required initializer for archiving
+    convenience required init?(coder aDecoder: NSCoder)
+    {
+        let coilRef = aDecoder.decodeInteger(forKey: "CoilRef")
+        let diskRect = aDecoder.decodeRect(forKey: "DiskRect")
+        let N = aDecoder.decodeDouble(forKey: "Turns")
+        let J = aDecoder.decodeDouble(forKey: "CurrentDensity")
+        let windHt = aDecoder.decodeDouble(forKey: "WindowHeight")
+        let coreRadius = aDecoder.decodeDouble(forKey: "CoreRadius")
+        let data = aDecoder.decodeObject(forKey: "Data") as! PCH_SectionData
+        
+        self.init(coilRef:coilRef, diskRect:diskRect, N:N, J:J, windHt:windHt, coreRadius:coreRadius, secData:data)
+    }
+    
+    func encode(with aCoder: NSCoder)
+    {
+        aCoder.encode(self.coilRef, forKey:"CoilRef")
+        aCoder.encode(self.diskRect, forKey:"DiskRect")
+        aCoder.encode(self.N, forKey:"Turns")
+        aCoder.encode(self.J, forKey:"CurrentDensity")
+        aCoder.encode(self.windHt, forKey:"WindowHeight")
+        aCoder.encode(self.coreRadius, forKey:"CoreRadius")
+        aCoder.encode(self.data, forKey:"Data")
+        
     }
     
     /// BlueBook function J0

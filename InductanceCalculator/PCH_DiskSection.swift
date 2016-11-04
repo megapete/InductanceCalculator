@@ -8,17 +8,32 @@
 
 import Cocoa
 
+/*
 /// The == function must be defined for Hashable types
 internal func ==(lhs:PCH_DiskSection, rhs:PCH_DiskSection) -> Bool
 {
     return (lhs.data.serialNumber == rhs.data.serialNumber)
 }
+*/
 
-class PCH_DiskSection:NSObject, NSCoding {
+class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     
-    override var hashValue: Int {
+    /*
+    override var hash: Int {
+        
         return self.data.serialNumber
     }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        
+        if let other = object as? PCH_DiskSection
+        {
+            return self.data.serialNumber == other.data.serialNumber
+        }
+        
+        return false
+    }
+ */
 
     /// A reference number to the coil that "owns" the section.
     let coilRef:Int
@@ -78,6 +93,15 @@ class PCH_DiskSection:NSObject, NSCoding {
         self.init(coilRef:coilRef, diskRect:diskRect, N:N, J:J, windHt:windHt, coreRadius:coreRadius, secData:data)
     }
     
+    
+    func copy(with zone: NSZone? = nil) -> Any
+    {
+        let copy = PCH_DiskSection(coilRef: self.coilRef, diskRect: self.diskRect, N: self.N, J: self.J, windHt: self.windHt, coreRadius: self.coreRadius, secData: self.data)
+        
+        return copy
+    }
+ 
+    
     func encode(with aCoder: NSCoder)
     {
         aCoder.encode(self.coilRef, forKey:"CoilRef")
@@ -87,7 +111,6 @@ class PCH_DiskSection:NSObject, NSCoding {
         aCoder.encode(self.windHt, forKey:"WindowHeight")
         aCoder.encode(self.coreRadius, forKey:"CoreRadius")
         aCoder.encode(self.data, forKey:"Data")
-        
     }
     
     /// BlueBook function J0

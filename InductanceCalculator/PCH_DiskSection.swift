@@ -63,7 +63,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         Designated initializer
         
         - parameter N: The nuber of turns in the section
-        - parameter J: The current density on teh section
+        - parameter J: The current density on the section
         - parameter windHt: The window height of the core
         - parameter coreRadius: The core radius
 

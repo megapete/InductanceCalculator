@@ -1861,6 +1861,12 @@ class PCH_Matrix:CustomStringConvertible
     
     func SetRow(_ rowNum:Int, vector:PCH_Matrix)
     {
+        if (vector.matrixPrecision == precisions.doublePrecision)
+        {
+            self.SetRow(rowNum, buffer: vector.doubleBuffer!)
+            return
+        }
+        
         ZAssert(self.matrixPrecision == vector.matrixPrecision, message: "Vector's precision must match matrix precision")
         ZAssert(rowNum < self.numRows && rowNum >= 0, message: "Illegal row number")
         ZAssert(vector.numCols == 1, message: "The vector parameter must have only one column 9ie: it must be a vector)")

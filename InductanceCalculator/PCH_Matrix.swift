@@ -54,6 +54,11 @@ func +(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix
     return left.AddSubtract(right)
 }
 
+func += (left: inout PCH_Matrix, right:PCH_Matrix)
+{
+    left = left + right
+}
+
 func -(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix
 {
     return left.AddSubtract(right, isAdd: false)

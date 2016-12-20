@@ -2798,6 +2798,45 @@ class PCH_Matrix:CustomStringConvertible
                 // we need to create a full-sized buffer, the same as for symmetric matrices (see the note above)
                 var Am = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * self.numCols)
                 
+                    // Try using lower-triangular factorization to try and clear up the "leading minor of order i of A is not positive definite" errors that I've been getting in this routine. The LLt method is what is described in the Blue Book (pg 438).
+                
+                for row in 0..<self.numRows
+                {
+                    for col in 0...row
+                    {
+                        // we're only going to set the lower triangle (UPLO = 'L') of the buffer
+                        Am[row * self.numCols + col] = self.doubleBuffer![row + col * (col + 1) / 2]
+                    }
+                }
+                
+                var fact:Int8 = 69 // 'E'
+                var uplo:Int8 = 76 // 'L'
+                var n = __CLPK_integer(self.numRows)
+                var nrhs = __CLPK_integer(B.numCols)
+                var lda = n
+                var Bm = B.doubleBuffer!
+                var ldb = n
+                var info = __CLPK_integer(0)
+                
+                var AF = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * self.numCols)
+                var ldaf = n
+                var equed:Int8 = 0
+                var S = [__CLPK_doublereal](repeating: 0.0, count: self.numRows)
+                
+                var X = [__CLPK_doublereal](repeating: 0.0, count: self.numRows * B.numCols)
+                var ldx = n
+                
+                var rcond:__CLPK_doublereal = 0.0
+                
+                var ferr = [__CLPK_doublereal](repeating: 0.0, count: B.numCols)
+                var berr = [__CLPK_doublereal](repeating: 0.0, count: B.numCols)
+                
+                var work = [__CLPK_doublereal](repeating: 0.0, count: 3 * self.numRows)
+                var iwork = [__CLPK_integer](repeating: __CLPK_integer(0), count: self.numRows)
+                
+                dposvx_(&fact, &uplo, &n, &nrhs, &Am, &lda, &AF, &ldaf, &equed, &S, &Bm, &ldb, &X, &ldx, &rcond, &ferr, &berr, &work, &iwork, &info)
+                
+                /*
                 for col in 0..<self.numCols
                 {
                     for row in 0...col
@@ -2806,7 +2845,7 @@ class PCH_Matrix:CustomStringConvertible
                         Am[col * self.numRows + row] = self.doubleBuffer![row + col * (col + 1) / 2]
                     }
                 }
-                
+                */
                 /* Testing with TME job 016 is giving issues when increasing the number of subdivisions of the HV winding beyond 30 on the laptop and around 36 on the desktop machines. I am going to try a different LAPACK call, dposvx, which is supposed to "equilibrate" the system.
                 
                 var fact:Int8 = 69 // 'E'
@@ -2836,7 +2875,7 @@ class PCH_Matrix:CustomStringConvertible
                 
                 dposvx_(&fact, &uplo, &n, &nrhs, &Am, &lda, &AF, &ldaf, &equed, &S, &Bm, &ldb, &X, &ldx, &rcond, &ferr, &berr, &work, &iwork, &info)
                 */
-                // Simple dposv_ call, which fails with high number of disks and large differences between LV and HV winding inductances (ie: high ratio).
+                /* Simple dposv_ call, which fails with high number of disks and large differences between LV and HV winding inductances (ie: high ratio).
                 
                 var uplo:Int8 = 85
                 var n = __CLPK_integer(self.numRows)
@@ -2847,7 +2886,7 @@ class PCH_Matrix:CustomStringConvertible
                 var info = __CLPK_integer(0)
                 
                 dposv_(&uplo, &n, &nrhs, &Am, &lda, &Bm, &ldb, &info)
-                
+                */
                 
                 if (info != 0)
                 {
@@ -2857,7 +2896,7 @@ class PCH_Matrix:CustomStringConvertible
                 }
                 
                 
-                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: Bm, matrixType: B.matrixType)
+                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: X, matrixType: B.matrixType)
                 
             }
             else

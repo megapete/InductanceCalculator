@@ -23,6 +23,7 @@
     2) Access (both setting and getting) is via a comma-separated square bracket subscript (like arrays). So, to get at the element at row 5, column 9: element = matrix[5,9].
 */
 
+import Cocoa
 import Foundation
 import Accelerate
 
@@ -2806,7 +2807,7 @@ class PCH_Matrix:CustomStringConvertible
                     }
                 }
                 
-                // Testing with TME job 016 is giving issues when increasing the number of subdivisions of the HV winding beyond 30 on the laptop and around 36 on the desktop machines. I am going to try a different LAPACK call, dposvx, which is supposed to "equilibrate" the system.
+                /* Testing with TME job 016 is giving issues when increasing the number of subdivisions of the HV winding beyond 30 on the laptop and around 36 on the desktop machines. I am going to try a different LAPACK call, dposvx, which is supposed to "equilibrate" the system.
                 
                 var fact:Int8 = 69 // 'E'
                 var uplo:Int8 = 85 // 'U'
@@ -2834,8 +2835,8 @@ class PCH_Matrix:CustomStringConvertible
                 var iwork = [__CLPK_integer](repeating: __CLPK_integer(0), count: self.numRows)
                 
                 dposvx_(&fact, &uplo, &n, &nrhs, &Am, &lda, &AF, &ldaf, &equed, &S, &Bm, &ldb, &X, &ldx, &rcond, &ferr, &berr, &work, &iwork, &info)
-                
-                /* Simple dposv_ call, which fails with high number of disks and large differences between LV and HV winding inductances (ie: high ratio).
+                */
+                // Simple dposv_ call, which fails with high number of disks and large differences between LV and HV winding inductances (ie: high ratio).
                 
                 var uplo:Int8 = 85
                 var n = __CLPK_integer(self.numRows)
@@ -2846,17 +2847,17 @@ class PCH_Matrix:CustomStringConvertible
                 var info = __CLPK_integer(0)
                 
                 dposv_(&uplo, &n, &nrhs, &Am, &lda, &Bm, &ldb, &info)
-                */
+                
                 
                 if (info != 0)
                 {
-                    DLog("Error in dsysv: \(info)")
+                    DLog("Error in dposvx: \(info)")
                     
                     return nil
                 }
                 
                 
-                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: X, matrixType: B.matrixType)
+                return PCH_Matrix(numRows: B.numRows, numCols: B.numCols, buffer: Bm, matrixType: B.matrixType)
                 
             }
             else
@@ -2884,7 +2885,7 @@ class PCH_Matrix:CustomStringConvertible
                 
                 if (info != 0)
                 {
-                    DLog("Error in dsysv: \(info)")
+                    DLog("Error in dposvx: \(info)")
                     
                     return nil
                 }
@@ -2898,5 +2899,69 @@ class PCH_Matrix:CustomStringConvertible
         }
         
         return nil
+    }
+    
+    func SaveAsCSV()
+    {
+        let saveFilePanel = NSSavePanel()
+        
+        saveFilePanel.title = "Save Matrix as CSV file"
+        saveFilePanel.canCreateDirectories = true
+        saveFilePanel.allowedFileTypes = ["csv"]
+        saveFilePanel.allowsOtherFileTypes = false
+        
+        if (saveFilePanel.runModal() == NSFileHandlingPanelOKButton)
+        {
+            guard let newFileURL = saveFilePanel.url
+                else
+            {
+                DLog("Bad file name")
+                return
+            }
+            
+            var result = ""
+            
+            for i in 0..<self.numRows
+            {
+                for j in 0..<self.numCols
+                {
+                    if (j == self.numCols - 1)
+                    {
+                        if (self.matrixPrecision == precisions.doublePrecision)
+                        {
+                            let value:Double = self[i,j]
+                            result += "\(value)\n"
+                        }
+                        else
+                        {
+                            let value:Complex = self[i,j]
+                            result += "\(value)\n"
+                        }
+                    }
+                    else
+                    {
+                        if (self.matrixPrecision == precisions.doublePrecision)
+                        {
+                            let value:Double = self[i,j]
+                            result += "\(value),"
+                        }
+                        else
+                        {
+                            let value:Complex = self[i,j]
+                            result += "\(value),"
+                        }
+                    }
+                }
+            }
+            
+            do {
+                try result.write(to: newFileURL, atomically: true, encoding: String.Encoding.utf8)
+            }
+            catch {
+                ALog("Could not write file!")
+            }
+            
+            DLog("Finished writing file")
+        }
     }
 }

@@ -117,7 +117,7 @@ func ScaledIntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
     else
     {
         DLog("Illegal range")
-        return DBL_MAX
+        return Double.greatestFiniteMagnitude
     }
     
     let b = toB

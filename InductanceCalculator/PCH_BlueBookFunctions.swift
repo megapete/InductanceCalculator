@@ -105,6 +105,17 @@ func IntegralOf_tK1_from0_to(_ b:Double) -> Double
     return (π / 2.0) * (1.0 - secondTerm)
 }
 
+func ScaledIntegralOf_tK1_from0_to(_ b:Double) -> Double
+{
+    // return IntK1 where the actual integral = π / 2.0 * (1.0 - exp(-b) * IntK1)
+    let Rk0 = gsl_sf_bessel_K0_scaled(b)
+    let Rk1 = gsl_sf_bessel_K1_scaled(b)
+    
+    let result = b * (M1(b) * Rk0 + M0(b) * Rk1)
+    
+    return result
+}
+
 func IntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
 {
     return IntegralOf_tK1_from0_to(toB) - IntegralOf_tK1_from0_to(a)
@@ -135,7 +146,7 @@ func ScaledIntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
     let testB = (π / 2.0) * b * exp(-b) * (M1(b) * Rk0b + M0(b) * Rk1b)
     */
     
-    let firstTerm = a * (M1(a) * Rk0a + M0(a) * Rk1a)
+    let firstTerm = (a != 0 ? a * (M1(a) * Rk0a + M0(a) * Rk1a) : 1.0)
     let secondTerm = b * exp(a-b) * (M1(b) * Rk0b + M0(b) * Rk1b)
     
     return (π / 2.0) * (firstTerm - secondTerm)

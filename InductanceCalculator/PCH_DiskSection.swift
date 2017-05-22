@@ -313,6 +313,28 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         return eBase * (Ri0 / Rk0) * IntegralOf_tK1_from(x1, toB: x2) + IntegralOf_tI1_from(x1, toB: x2)
     }
     
+    func ScaledG(_ n:Int, windHtFactor:Double) -> Double
+    {
+        // return Rg where Gn = e(x1) * Rg
+        
+        let useWindht = windHtFactor * self.windHt
+        let m = (Double(n) * π / useWindht)
+        
+        let x1 = m * Double(self.diskRect.origin.x)
+        let x2 = m * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        let xc = m * self.coreRadius
+        
+        let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+        let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+        let RtK = ScaledIntegralOf_tK1_from(x1, toB: x2)
+        let RtI = ScaledIntegralOf_tI1_from(x1, toB: x2)
+        
+        let exponent = 2.0 * xc - 2.0 * x1
+        
+        let Rg = e(exponent) * (Ri0 / Rk0) * RtK + RtI
+        
+        return Rg
+    }
     
     /// Rabins' method for calculating self-inductance
     func SelfInductance(_ windHtFactor:Double) -> Double

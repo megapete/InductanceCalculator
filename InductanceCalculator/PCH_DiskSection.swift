@@ -227,7 +227,14 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         return IntegralOf_tK1_from0_to(x2)
     }
     
-    
+    func ScaledE(_ n:Int, windHtFactor:Double) -> Double
+    {
+        // return Re where the actual integral = π / 2.0 * (1.0 - exp(-x2) * Re)
+        let useWindht = windHtFactor * self.windHt
+        let x2 = (Double(n) * π / useWindht) * Double(self.diskRect.origin.x + self.diskRect.size.width)
+        
+        return ScaledIntegralOf_tK1_from0_to(x2)
+    }
     
     /// BlueBook function Fn
     func F(_ n:Int, windHtFactor:Double) -> Double

@@ -153,17 +153,17 @@ func ScaledIntegralOf_tK1_from(_ a:Double, toB:Double) -> Double
     
 }
 
-/* Unused functions
-func L0(x:Double) -> Double
+
+func L0(_ x:Double) -> Double
 {
     return gsl_sf_bessel_I0(x) - M0(x)
 }
 
-func L1(x:Double) -> Double
+func L1(_ x:Double) -> Double
 {
     return gsl_sf_bessel_I1(x) - M1(x)
 }
-*/
+
 
 
 /*

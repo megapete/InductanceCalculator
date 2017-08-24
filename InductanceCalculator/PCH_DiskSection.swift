@@ -42,7 +42,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     let N:Double
     
     /// The current density on the section
-    let J:Double
+    var J:Double
     
     /// The window height of the core that holds the section
     let windHt:Double

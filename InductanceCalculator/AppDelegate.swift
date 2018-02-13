@@ -694,7 +694,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         saveFilePanel.allowedFileTypes = ["cir", "txt"]
         saveFilePanel.allowsOtherFileTypes = false
         
-        if (saveFilePanel.runModal() == NSFileHandlingPanelOKButton)
+        if (saveFilePanel.runModal().rawValue == NSFileHandlingPanelOKButton)
         {
             guard let newFileURL = saveFilePanel.url
                 else

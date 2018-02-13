@@ -16,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
-        
+/*
         // Create the special "ground" section. By convention, it has a serial number of -1.
         let gndSection = PCH_DiskSection(coilRef: -1, diskRect: NSMakeRect(0, 0, 0, 0), N: 0, J: 0, windHt: 0, coreRadius: 0, secData: PCH_SectionData(sectionID: "GND", serNum: -1, inNode:-1, outNode:-1))
         
@@ -673,8 +673,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.saveFileWithString(fString)
         
         // End of main function
+ */
     }
-    
+ 
     func derivativeOfBIL(_ V:Double, t:Double) -> Double
     {
         let k1 = 14285.0

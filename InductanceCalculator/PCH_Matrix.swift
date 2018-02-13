@@ -2939,7 +2939,7 @@ class PCH_Matrix:CustomStringConvertible
         
         return nil
     }
-    
+/*
     func SaveAsCSV()
     {
         let saveFilePanel = NSSavePanel()
@@ -3003,4 +3003,5 @@ class PCH_Matrix:CustomStringConvertible
             DLog("Finished writing file")
         }
     }
+ */
 }

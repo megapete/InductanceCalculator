@@ -66,142 +66,7 @@ func -(left:PCH_Matrix, right:PCH_Matrix) -> PCH_Matrix
 }
 
 
-// Operators for Complex types
 
-/// Operator '+' for the Complex struct
-func +(left:Complex, right:Complex) -> Complex
-{
-    return Complex(real: left.real + right.real, imag: left.imag + right.imag)
-}
-
-/// Operator '-' for the Complex struct
-func -(left:Complex, right:Complex) -> Complex
-{
-    return Complex(real: left.real - right.real, imag: left.imag - right.imag)
-}
-
-/// Operator '*' (multiplication) for the Complex struct
-func *(left:Complex, right:Complex) -> Complex
-{
-    // Note: This method comes from https://en.wikipedia.org/wiki/Complex_number#Elementary_operations
-    
-    let a = left.real
-    let b = left.imag
-    
-    let c = right.real
-    let d = right.imag
-    
-    return Complex(real: a*c - b*d, imag: b*c + a*d)
-}
-
-/// Operator '/' (division) for the Complex struct
-func /(left:Complex, right:Complex) -> Complex
-{
-    // Note: This method comes from https://en.wikipedia.org/wiki/Complex_number#Elementary_operations
-    
-    let a = left.real
-    let b = left.imag
-    
-    let c = right.real
-    let d = right.imag
-    
-    ZAssert(c != 0.0 || d != 0.0, message: "Attempt to divide complex number by 0")
-    
-    let denominator = c*c + d*d
-    
-    return Complex(real: (a*c + b*d) / denominator, imag: (b*c - a*d) / denominator)
-}
-
-
-/// Create a structure for complex numbers that we'll use in this class
-struct Complex:CustomStringConvertible
-{
-    var real:Double
-    var imag:Double
-    
-    /// Absolute value
-    var cabs:Double
-    {
-        return sqrt(self.real * self.real + self.imag * self.imag)
-    }
-    
-    /// Argument (angle) in radians
-    var carg:Double
-    {
-        let x = self.real
-        let y = self.imag
-        
-        ZAssert(x != 0.0 || y != 0.0, message: "Cannot compute argument of 0")
-        
-        if (x > 0.0)
-        {
-            return atan(y / x)
-        }
-        else if (x < 0.0 && y >= 0.0)
-        {
-            return atan(y / x) + π
-        }
-        else if (x < 0.0 && y < 0.0)
-        {
-            return atan(y / x) - π
-        }
-        else if (x == 0.0 && y > 0.0)
-        {
-            return π / 2.0
-        }
-        else
-        {
-            return -π / 2.0
-        }
-    }
-    
-    /// Simple conjugate function
-    var conjugate:Complex
-    {
-        return Complex(real: self.real, imag: -self.imag)
-    }
-    
-    // This is what shows up in 'print' statements
-    var description:String
-    {
-        var result = ""
-        
-        if (self.real == 0.0 && self.imag == 0.0)
-        {
-            result = "0.0"
-        }
-        
-        if (self.real != 0.0)
-        {
-            result += "\(self.real)"
-        }
-        
-        if (self.imag != 0.0)
-        {
-            if (self.real != 0.0)
-            {
-                result += " "
-                
-                if (self.imag < 0)
-                {
-                    result += "- "
-                }
-                else
-                {
-                    result += "+ "
-                }
-                
-                result += "\(abs(self.imag))i"
-            }
-            else
-            {
-                result = "\(self.imag)i"
-            }
-        }
-        
-        return result
-    }
-}
 /**
     A struct that will be used for the keys in the dictionary that will store a sparse matrix
 */
@@ -2483,7 +2348,8 @@ class PCH_Matrix:CustomStringConvertible
                     
                     for nextCol in 0..<X.numCols
                     {
-                        let value:Complex = leftValue * self[nextRow, nextCol]
+                        let rightValue:Complex = self[nextRow, nextCol]
+                        let value:Complex = leftValue * rightValue
                         
                         B[nextCol * self.numRows + nextRow] = __CLPK_doublecomplex(r: value.real, i: value.imag)
                     }
@@ -2518,7 +2384,8 @@ class PCH_Matrix:CustomStringConvertible
                     
                     for nextCol in 0..<X.numCols
                     {
-                        let value:Complex = leftValue * X[nextRow, nextCol]
+                        let rightValue:Complex = X[nextRow, nextCol]
+                        let value:Complex = leftValue * rightValue
                         
                         B[nextCol * self.numRows + nextRow] = __CLPK_doublecomplex(r: value.real, i: value.imag)
                     }
@@ -2546,7 +2413,8 @@ class PCH_Matrix:CustomStringConvertible
                 
                 for nextVal in 0..<self.numRows
                 {
-                    let value:Complex = self[nextVal, nextVal] * X[nextVal, nextVal]
+                    let rightValue:Complex = X[nextVal, nextVal]
+                    let value:Complex = self[nextVal, nextVal] * rightValue
                     
                     B[nextVal] = __CLPK_doublecomplex(r: value.real, i: value.imag)
                 }

@@ -76,10 +76,21 @@ struct sparseKeyType:Hashable
     let row:Int
     let col:Int
     
+    // As of Swift 5, the following function and ivar are no longer required (they're synthesized by XCode).
+    /*
+    func hash(into hasher: inout Hasher)
+    {
+        hasher.combine(self.row)
+        hasher.combine(self.col)
+    }
+    */
+    
+    /*
     // I found this hash function somewhere on the net
     internal var hashValue: Int {
         return self.row.hashValue << MemoryLayout<Int>.size ^ self.col.hashValue
     }
+     */
 }
 
 /// The == function must be defined for Hashable types

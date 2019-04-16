@@ -2441,6 +2441,87 @@ class PCH_Matrix:CustomStringConvertible
         return nil
     }
     
+    
+    
+    /**
+        Return the "condition number" of self. This function is (currently) only available for general matrices of double-precision.
+     
+     - returns: The condition number of the matrix
+    */
+    
+    func ConditionNumber() -> Double
+    {
+        ZAssert(self.matrixPrecision == .doublePrecision, message: "This routine only works for double precision matrices")
+        ZAssert(self.matrixType == .generalMatrix, message: "This routine only works on general matrices")
+        
+        // Enclose the call in an if-then block for possible future expansion into other precisions and types
+        if (self.matrixType == .generalMatrix)
+        {
+            if self.matrixPrecision == .doublePrecision
+            {
+                var Am = self.doubleBuffer!
+                
+                var m = __CLPK_integer(self.numRows)
+                var n = __CLPK_integer(self.numCols)
+                var lda = m
+                var s = [__CLPK_doublereal](repeating: 0.0, count: Int(min(m, n)))
+                
+                // I don't know if these arrays and vars even need to be initialized for an 'N' call...
+                var u = [__CLPK_doublereal](repeating: 0.0, count: Int(m * n))
+                var vt = [__CLPK_doublereal](repeating: 0.0, count: Int(m * n))
+                var ldu = m
+                var ldvt = n
+                
+                var info = __CLPK_integer(0)
+                
+                var optWork = [__CLPK_doublereal](repeating: 0.0, count: 1)
+                var lWork:__CLPK_integer = -1 // First time through, we need to find the optimium size for WORK
+                var iWork = [__CLPK_integer](repeating: 0, count: 8 * Int(min(m,n)))
+                
+                var jobz = Int8(78) // 'N'
+                
+                // First call to get size of WORK
+                dgesdd_(&jobz, &m, &n, &Am, &lda, &s, &u, &ldu, &vt, &ldvt, &optWork, &lWork, &iWork, &info)
+                
+                lWork = __CLPK_integer(optWork[0])
+                var actualWork = [__CLPK_doublereal](repeating: 0.0, count: Int(lWork))
+                
+                dgesdd_(&jobz, &m, &n, &Am, &lda, &s, &u, &ldu, &vt, &ldvt, &actualWork, &lWork, &iWork, &info)
+                
+                if (info != 0)
+                {
+                    DLog("Error in dsysv: \(info)")
+                    
+                    return Double(Double.greatestFiniteMagnitude)
+                }
+                
+                var result = Double.greatestFiniteMagnitude
+                
+                if let maxC = s.max()
+                {
+                    if let minC = s.min()
+                    {
+                        result = Double(maxC / minC)
+                    }
+                }
+                
+                return result
+                
+            }
+            else
+            {
+                ALog("Unimplemented matrix precision!")
+            }
+        }
+        else
+        {
+            // Shouldn't ever reach here
+            ALog("Unimplemented matrix type!")
+        }
+        
+        return Double.greatestFiniteMagnitude
+    }
+    
     /**
         Solve the system AX = B where A is self and B is passed to the routine.
      

@@ -352,7 +352,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
-        let convergenceIterations = 200
+        let convergenceIterations = 300
         
         // Next line rendered obsolete by Swift 3 (I think, anyways - XCode updated the code and I didn't check everything it did)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
@@ -435,7 +435,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         // After testing, I've decided to go with the BlueBook recommendation to simply execute the sumation 200 times insead of stopping after some informal definition of "convergence".
         
-        let convergenceIterations =  200
+        let convergenceIterations =  300
         
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         

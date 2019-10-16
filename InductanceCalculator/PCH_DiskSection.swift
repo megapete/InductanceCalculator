@@ -357,7 +357,9 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         // Next line rendered obsolete by Swift 3 (I think, anyways - XCode updated the code and I didn't check everything it did)
         // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
         
-        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
+        // var currVal = [Double](repeating: 0.0, count: convergenceIterations)
+        
+        let addQueue = DispatchQueue(label: "com.huberistech.selfinductance.addition")
         
         // for var n = 1; n <= 200 /* fabs((lastValue-currentValue) / lastValue) > epsilon */; n++
         DispatchQueue.concurrentPerform(iterations: convergenceIterations)
@@ -387,14 +389,17 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             
             let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
             
-            currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+            addQueue.sync {
+                result += multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+            }
+            // currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
             
             // Old way
             // currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
         }
         
         // cool way to get the sum of the values in an array
-        result += currVal.reduce(0.0, +)
+        // result += currVal.reduce(0.0, +)
         
         return result
     }
@@ -439,6 +444,8 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
+        let addQueue = DispatchQueue(label: "com.huberistech.mutualinductance.addition")
+        
         // for i in 0..<convergenceIterations
         DispatchQueue.concurrentPerform(iterations: convergenceIterations)
         {
@@ -467,7 +474,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 
                 let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
                 
-                currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                // currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                
+                addQueue.sync {
+                    result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                }
                 
                 // The old, non-precise way
                 // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
@@ -484,7 +495,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 let insideTerm = innerExp * firstProduct + secondProduct
                 let newWay = outerExp * insideTerm
 
-                currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                // currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                
+                addQueue.sync {
+                    result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                }
                 
                 // The old, imprecise way
                 // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
@@ -495,7 +510,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         }
         
         // cool way to get the sum of the values in an array
-        result += currVal.reduce(0.0, +)
+        // result += currVal.reduce(0.0, +)
         
         return result
     }

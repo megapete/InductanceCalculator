@@ -349,14 +349,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         var result = (π * µ0 * N1 * N1 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         
-        
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
         let convergenceIterations = 300
         
-        // Next line rendered obsolete by Swift 3 (I think, anyways - XCode updated the code and I didn't check everything it did)
-        // let loopQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
-        
+        // Previously, this routine accessed the currVal array's elements during the concurrentPerform call. Swift arrays are NOT thread-safe, which I only found out after updating the code to Swift 5. I subsequently decided to add a serial queue (addQueue) which directly accesses the 'result' variable.
         // var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         let addQueue = DispatchQueue(label: "com.huberistech.selfinductance.addition")
@@ -392,13 +389,12 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             addQueue.sync {
                 result += multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
             }
-            // currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
             
-            // Old way
-            // currVal[i] = multiplier * (gsl_pow_2(self.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
+            // Old (bad) way of saving the calculated value for thsi iteration
+            // currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
         }
         
-        // cool way to get the sum of the values in an array
+        // cool way to get the sum of the values in an array (no longer used)
         // result += currVal.reduce(0.0, +)
         
         return result
@@ -437,12 +433,9 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
         
-        
-        // After testing, I've decided to go with the BlueBook recommendation to simply execute the sumation 200 times insead of stopping after some informal definition of "convergence".
+        // After testing, I've decided to go with the BlueBook recommendation to simply execute the summation 200 times insead of stopping after some informal definition of "convergence". [Subsequently changed to 300 times)
         
         let convergenceIterations =  300
-        
-        var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         let addQueue = DispatchQueue(label: "com.huberistech.mutualinductance.addition")
         
@@ -474,14 +467,9 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 
                 let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
                 
-                // currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
-                
                 addQueue.sync {
                     result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
                 }
-                
-                // The old, non-precise way
-                // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (self.E(n) * IntegralOf_tI1_from(x1, toB: x2) + self.F(n) * IntegralOf_tK1_from(x1, toB: x2) - π / 2.0 * IntegralOf_tL1_from(x1, toB: x2)))
             }
             else
             {
@@ -500,17 +488,8 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 addQueue.sync {
                     result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
                 }
-                
-                // The old, imprecise way
-                // currVal[i] = multiplier * ((self.J(n) * otherDisk.J(n)) / gsl_pow_4(m) * (otherDisk.C(n) * IntegralOf_tI1_from(x1, toB: x2) + otherDisk.D(n) * IntegralOf_tK1_from(x1, toB: x2)))
-                
             }
-            
-            
         }
-        
-        // cool way to get the sum of the values in an array
-        // result += currVal.reduce(0.0, +)
         
         return result
     }

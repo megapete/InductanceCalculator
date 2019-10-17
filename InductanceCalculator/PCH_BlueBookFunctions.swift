@@ -11,8 +11,8 @@
 import Foundation
 import Accelerate
 
-let relError = 1.0E-4
-let absError = 1.0E-10
+let relError = 1.0E-8
+let absError = 1.0E-12
 
 func IntegralOf_tL1_from0_to(_ b:Double) -> Double
 {
@@ -221,7 +221,7 @@ func M0(_ arg:Double) -> Double
         switch integrationResult {
         
         case .success(let result, let estAbsError):
-            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return result * 2.0 / π
         
         case .failure(let error):
@@ -252,7 +252,7 @@ func M1(_ arg:Double) -> Double
         switch integrationResult {
         
         case .success(let result, let estAbsError):
-            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return (1.0 - result) * 2.0 / π
         
         case .failure(let error):
@@ -315,7 +315,7 @@ func IntegralOf_M0_from0_to(_ arg:Double) -> Double
         switch integrationResult {
         
         case .success(let result, let estAbsError):
-            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return result * 2.0 / π
         
         case .failure(let error):

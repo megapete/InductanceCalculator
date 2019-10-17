@@ -9,8 +9,10 @@
 /// This is basically an interface file which defines the functions we need to use Rabin's method for inductance calculations
 
 import Foundation
+import Accelerate
 
 let relError = 1.0E-4
+let absError = 1.0E-10
 
 func IntegralOf_tL1_from0_to(_ b:Double) -> Double
 {
@@ -166,28 +168,15 @@ func L1(_ x:Double) -> Double
 
 
 
-/*
-func M0X_integrand(_ theta:Double, params:UnsafeMutableRawPointer?) -> Double!
-{
-    
-    
-    // first we have to convert the params pointer to a Double
-    let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = params.pointee
-    
-    return exp(-x * cos(theta))
-}
- */
 
-func M0(_ x:Double) -> Double
+
+func GSL_M0(_ x:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0
     var result:Double = 0.0
     
     var params = x
-    
-    // var tst = gsl_function(function: <#T##((Double, UnsafeMutableRawPointer?) -> Double)!##((Double, UnsafeMutableRawPointer?) -> Double)!##(Double, UnsafeMutableRawPointer?) -> Double#>, params: <#T##UnsafeMutableRawPointer!#>)
     
     var integrand:gsl_function = gsl_function(function: {(theta:Double, p:UnsafeMutableRawPointer?) -> Double in
         
@@ -204,8 +193,6 @@ func M0(_ x:Double) -> Double
         params: &params)
 
     
-    // var integrand:gsl_function = gsl_function(function: M0X_integrand, params: &params)
-    
     let fRes = gsl_integration_qng(&integrand, 0.0, π / 2.0, 0.0, relError, &result, &iError, &iNumEvals)
     
     if (fRes > 0)
@@ -214,21 +201,72 @@ func M0(_ x:Double) -> Double
         return 0.0
     }
     
+    
     return result * 2.0 / π
 }
 
-/*
-func M1X_integrand(_ theta:Double, params:UnsafeMutableRawPointer?) -> Double
+// M0 function using Accelerate-based integration routine (available in OSX10.15 Catalinea and later). Testing indicates that it gives the exact same answer as GSL, with 10 "max intervals" (whatever that is). For now, we'll keep the GSL routine around for when/if the routine is called on an older version of OSX. This will be phased out at some point in the future/
+func M0(_ arg:Double) -> Double
+{
+    if #available(OSX 10.15, *)
     {
-    // first we have to convert the params pointer to a Double
-    let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = dpParams.pointee
-    
-    return exp(-x * cos(theta)) * cos(theta)
+        let quadrature = Quadrature(integrator: .qags(maxIntervals: 10), absoluteTolerance: absError, relativeTolerance: relError)
+        
+        let integrationResult = quadrature.integrate(over: 0.0...(π / 2.0)) { theta in
+            
+            return exp(-arg * cos(theta))
+            
+        }
+        
+        switch integrationResult {
+        
+        case .success(let result, let estAbsError):
+            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            return result * 2.0 / π
+        
+        case .failure(let error):
+            ALog("Error calling integration routine. The error is: \(error)")
+            return 0.0
+        }
+    }
+    else
+    {
+        return GSL_M0(arg)
+    }
 }
-*/
 
-func M1(_ x:Double) -> Double
+
+// See the explanation above for M0() regarding Accelerate vs. GSL routines
+func M1(_ arg:Double) -> Double
+{
+    if #available(OSX 10.15, *)
+    {
+        let quadrature = Quadrature(integrator: .qags(maxIntervals: 10), absoluteTolerance: absError, relativeTolerance: relError)
+        
+        let integrationResult = quadrature.integrate(over: 0.0...(π / 2.0)) { theta in
+            
+            return exp(-arg * cos(theta)) * cos(theta)
+            
+        }
+        
+        switch integrationResult {
+        
+        case .success(let result, let estAbsError):
+            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            return (1.0 - result) * 2.0 / π
+        
+        case .failure(let error):
+            ALog("Error calling integration routine. The error is: \(error)")
+            return 0.0
+        }
+    }
+    else
+    {
+        return GSL_M1(arg)
+    }
+}
+
+func GSL_M1(_ x:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0
@@ -254,25 +292,45 @@ func M1(_ x:Double) -> Double
     
     if (fRes > 0)
     {
-        ALog("Error calling integration routine")
+        ALog("Error calling GSL integration routine")
         return 0.0
     }
     
     return (1.0 - result) * 2.0 / π
 }
 
-/*
-func IntM0T_integrand(_ theta:Double, params:UnsafeMutablePointer<Void>) -> Double
+// See the explanation above for M0() regarding Accelerate vs. GSL routines
+func IntegralOf_M0_from0_to(_ arg:Double) -> Double
 {
-    // first we have to convert the params pointer to a Double
-    let dpParams = UnsafeMutablePointer<Double>(params)
-    let x:Double = dpParams.pointee
-
-    return (1.0 - exp(-x * cos(theta))) / cos(theta)
+    if #available(OSX 10.15, *)
+    {
+        let quadrature = Quadrature(integrator: .qags(maxIntervals: 10), absoluteTolerance: absError, relativeTolerance: relError)
+        
+        let integrationResult = quadrature.integrate(over: 0.0...(π / 2.0)) { theta in
+            
+            return (1.0 - exp(-arg * cos(theta))) / cos(theta)
+            
+        }
+        
+        switch integrationResult {
+        
+        case .success(let result, let estAbsError):
+            DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
+            return result * 2.0 / π
+        
+        case .failure(let error):
+            ALog("Error calling integration routine. The error is: \(error)")
+            return 0.0
+        }
+    }
+    else
+    {
+        return GSL_M1(arg)
+    }
 }
- */
 
-func IntegralOf_M0_from0_to(_ b:Double) -> Double
+
+func GSL_IntegralOf_M0_from0_to(_ b:Double) -> Double
 {
     var iError:Double = 0.0
     var iNumEvals:Int = 0

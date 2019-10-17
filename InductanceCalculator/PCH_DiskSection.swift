@@ -353,7 +353,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         let convergenceIterations = 300
         
-        // Previously, this routine accessed the currVal array's elements during the concurrentPerform call. Swift arrays are NOT thread-safe, which I only found out after updating the code to Swift 5. I subsequently decided to add a serial queue (addQueue) which directly accesses the 'result' variable.
+        // Previously, this routine accessed the currVal array's elements (see commented-out code immediately below this comment) during the concurrentPerform call. Swift arrays are NOT thread-safe, which I only found out after updating the code to Swift 5. I subsequently decided to add a serial queue (addQueue) which directly accesses the 'result' variable.
         // var currVal = [Double](repeating: 0.0, count: convergenceIterations)
         
         let addQueue = DispatchQueue(label: "com.huberistech.selfinductance.addition")

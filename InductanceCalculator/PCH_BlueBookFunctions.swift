@@ -220,7 +220,7 @@ func M0(_ arg:Double) -> Double
         
         switch integrationResult {
         
-        case .success(let result, let estAbsError):
+        case .success(let result, _ /* let estAbsError */):
             // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return result * 2.0 / π
         
@@ -251,7 +251,7 @@ func M1(_ arg:Double) -> Double
         
         switch integrationResult {
         
-        case .success(let result, let estAbsError):
+        case .success(let result, _ /* let estAbsError */):
             // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return (1.0 - result) * 2.0 / π
         
@@ -314,7 +314,7 @@ func IntegralOf_M0_from0_to(_ arg:Double) -> Double
         
         switch integrationResult {
         
-        case .success(let result, let estAbsError):
+        case .success(let result, _ /* let estAbsError */):
             // DLog("Absolute error: \(estAbsError); p.u: \(estAbsError / result)")
             return result * 2.0 / π
         

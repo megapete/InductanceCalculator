@@ -18,23 +18,6 @@ internal func ==(lhs:PCH_DiskSection, rhs:PCH_DiskSection) -> Bool
 
 class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     
-    /*
-    override var hash: Int {
-        
-        return self.data.serialNumber
-    }
-    
-    override func isEqual(_ object: Any?) -> Bool {
-        
-        if let other = object as? PCH_DiskSection
-        {
-            return self.data.serialNumber == other.data.serialNumber
-        }
-        
-        return false
-    }
- */
-
     /// A reference number to the coil that "owns" the section.
     let coilRef:Int
     
@@ -58,6 +41,19 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     
     /// The electrical data associated with the section
     var data:PCH_SectionData
+    
+    /// Data dump for the section
+    override var description: String
+    {
+        var result:String = "Section: \(self.data.sectionID), Serial No: \(self.data.serialNumber)\n"
+        result += "In-node: \(self.data.nodes.inNode), Out-node: \(self.data.nodes.outNode)\n"
+        result += "Turns: \(self.N), J: \(self.J)\n"
+        result += "Rectangle: \(self.diskRect)\n"
+        result += "Series Cap: \(self.data.seriesCapacitance), Total Shunt Cap: \(self.data.totalShuntCapacitance)\n"
+        result += "Resistance: \(self.data.resistance), Self Inductance: \(self.data.selfInductance)\n"
+        
+        return result
+    }
     
     /**
         Designated initializer

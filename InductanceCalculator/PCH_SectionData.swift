@@ -24,6 +24,19 @@ class PCH_SectionData:NSObject, NSCoding {
     /// The shunt capacitances to other sections, in F. The keys are the sectionID's of the other sections.
     var shuntCapacitances = [String:Double]()
     
+    /// The sum of the shunt capacitances to other sections
+    var totalShuntCapacitance:Double {
+        
+        var result = 0.0
+        
+        for nextShunt in shuntCapacitances
+        {
+            result += nextShunt.value
+        }
+        
+        return result
+    }
+    
     /// The shunt capacitances to other sections, in F. The keys are the PCH_Section's of the other sections.
     // var shuntCaps = [PCH_DiskSection:Double]()
     

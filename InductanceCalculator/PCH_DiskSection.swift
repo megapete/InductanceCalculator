@@ -8,16 +8,49 @@
 
 import Cocoa
 
-/*
-/// The == function must be defined for Hashable types
-internal func ==(lhs:PCH_DiskSection, rhs:PCH_DiskSection) -> Bool
+fileprivate let ConvergenceIterations = 300
+fileprivate let WindowHtFactor = 3.0
+
+fileprivate struct CoilRadialConstants
 {
-    return (lhs.data.serialNumber == rhs.data.serialNumber)
+    var ScaledC:[Double] = Array(repeating: 0.0, count: ConvergenceIterations)
+    var E:[Double] = Array(repeating: 0.0, count: ConvergenceIterations)
+    var ScaledD:[Double] = Array(repeating: 0.0, count: ConvergenceIterations)
+    var ScaledF:[Double] = Array(repeating: 0.0, count: ConvergenceIterations)
+    var PartialScaledIntL1:[(Double, Double)] = Array(repeating: (0.0, 0.0), count: ConvergenceIterations)
+    var ScaledIntI1:[Double] = Array(repeating: 0.0, count: ConvergenceIterations)
+    
+    init(r1:Double, r2:Double, rc:Double, windHt:Double)
+    {
+        for n in 1...ConvergenceIterations
+        {
+            let useWindht = WindowHtFactor * windHt
+            let m = Double(n) * π / useWindht
+            
+            let x1 = m * r1
+            let x2 = m * r2
+            let xc = m * rc
+            
+            let Ri0 = gsl_sf_bessel_I0_scaled(xc)
+            let Rk0 = gsl_sf_bessel_K0_scaled(xc)
+            
+            ScaledC[n-1] = ScaledIntegralOf_tK1_from(x1, toB: x2)
+            ScaledD[n-1] = Ri0 / Rk0 * ScaledC[n-1]
+            E[n-1] = IntegralOf_tK1_from0_to(x2)
+            ScaledF[n-1] = (ScaledD[n-1] - exp(2.0 * (x1 - xc)) * ScaledIntegralOf_tI1_from0_to(x1))
+            
+            PartialScaledIntL1[n-1] = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
+            
+            // ScaledIntegralOf_tI1_from
+            ScaledIntI1[n-1] = ScaledIntegralOf_tI1_from(x1, toB: x2)
+    
+        }
+        
+    }
 }
-*/
 
 class PCH_DiskSection:NSObject, NSCoding, NSCopying {
-    
+
     /// A reference number to the coil that "owns" the section.
     let coilRef:Int
     
@@ -41,6 +74,8 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     
     /// The electrical data associated with the section
     var data:PCH_SectionData
+    
+    fileprivate static var coilRadialConstants:[Int : CoilRadialConstants] = [:]
     
     /// Data dump for the section
     override var description: String
@@ -73,6 +108,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         self.windHt = windHt
         self.coreRadius = coreRadius
         self.data = secData
+        
+        if coilRef >= 0 && PCH_DiskSection.coilRadialConstants[coilRef] == nil
+        {
+            PCH_DiskSection.coilRadialConstants[coilRef] = CoilRadialConstants(r1: Double(diskRect.origin.x), r2: Double(diskRect.origin.x + diskRect.width), rc: coreRadius, windHt: windHt)
+        }
     }
     
     // Required initializer for archiving
@@ -97,7 +137,6 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         return copy
     }
  
-    
     func encode(with aCoder: NSCoder)
     {
         aCoder.encode(self.coilRef, forKey:"CoilRef")
@@ -107,6 +146,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         aCoder.encode(self.windHt, forKey:"WindowHeight")
         aCoder.encode(self.coreRadius, forKey:"CoreRadius")
         aCoder.encode(self.data, forKey:"Data")
+    }
+    
+    func ResetCoilRadialConstants()
+    {
+        PCH_DiskSection.coilRadialConstants.removeAll()
     }
     
     /// BlueBook function J0
@@ -223,6 +267,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         return IntegralOf_tK1_from0_to(x2)
     }
     
+    /*
     func ScaledE(_ n:Int, windHtFactor:Double) -> Double
     {
         // return Re where the actual integral = π / 2.0 * (1.0 - exp(-x2) * Re)
@@ -231,6 +276,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         return ScaledIntegralOf_tK1_from0_to(x2)
     }
+ */
     
     /// BlueBook function Fn
     func F(_ n:Int, windHtFactor:Double) -> Double
@@ -370,17 +416,24 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             // After much mathematical manipulation and using scaled versions of the I and K functions, this is the most accurate method I came up with for calculating each iteration of the sum (the old method follows but is commented out). I have used a bunch of let statements for the different components of the equation to help debugging
             
             // The scaled version of Fn returns the remainder Rf where Fn = exp(2.0 * xc - x1) * Rf
-            let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
+            // let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
+            let scaledFn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledF[i]
             
             // the exponent after combining the two scaled remainders is (2.0 * xc - 2.0 * x1)
             let exponent = 2.0 * (xc - x1)
             
-            let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
+            // This is ScaledCn
+            // let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
+            let scaledCn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledC[i]
             
-            let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
-            let mult = self.E(n, windHtFactor:windHtFactor) - π / 2.0
+            // let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
+            let (IntI1TermUnscaled, scaledI1) = PCH_DiskSection.coilRadialConstants[self.coilRef]!.PartialScaledIntL1[i]
             
-            let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
+            let mult = PCH_DiskSection.coilRadialConstants[self.coilRef]!.E[i] - π / 2.0
+            
+            var newWay = mult * exp(x1) * scaledI1
+            newWay -= (π / 2.0) *  IntI1TermUnscaled
+            newWay += exp(exponent) * (scaledFn * scaledCn)
             
             addQueue.sync {
                 result += multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
@@ -454,14 +507,19 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             {
                 // This uses the same "scaled" version of the iteration step as the SelfInductance() function above. See there for more comments.
                 
-                let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
+                let scaledFn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledF[i]
                 let exponent = 2.0 * (xc - x1)
-                let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
                 
-                let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
-                let mult = self.E(n, windHtFactor:windHtFactor) - π / 2.0
+                // ScaledCn
+                let scaledCn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledC[i]
                 
-                let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledTK1)
+                // let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
+                let (IntI1TermUnscaled, scaledI1) = PCH_DiskSection.coilRadialConstants[self.coilRef]!.PartialScaledIntL1[i]
+                
+                // let mult = self.E(n, windHtFactor:windHtFactor) - π / 2.0
+                let mult = PCH_DiskSection.coilRadialConstants[self.coilRef]!.E[i] - π / 2.0
+                
+                let newWay = mult * exp(x1) * scaledI1 - (π / 2.0) *  IntI1TermUnscaled + exp(exponent) * (scaledFn * scaledCn)
                 
                 addQueue.sync {
                     result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
@@ -474,8 +532,12 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 let outerExp = exp(2.0 * xc - x3 - x1)
                 let innerExp = exp(-2.0 * xc + 2.0 * x1)
                 
-                let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
-                let secondProduct = otherDisk.ScaledD(n, windHtFactor:windHtFactor) * ScaledIntegralOf_tK1_from(x1, toB: x2)
+                // let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
+                let firstProduct = PCH_DiskSection.coilRadialConstants[otherDisk.coilRef]!.ScaledC[i] * PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledIntI1[i]
+                
+                // let secondProduct = otherDisk.ScaledD(n, windHtFactor:windHtFactor) * ScaledIntegralOf_tK1_from(x1, toB: x2)
+                let secondProduct = PCH_DiskSection.coilRadialConstants[otherDisk.coilRef]!.ScaledD[i] * PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledC[i]
+                
                 let insideTerm = innerExp * firstProduct + secondProduct
                 let newWay = outerExp * insideTerm
 

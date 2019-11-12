@@ -452,7 +452,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
     }
     
     /// Rabins' methods for mutual inductances
-    func MutualInductanceTo(_ otherDisk:PCH_DiskSection, windHtFactor:Double) -> Double
+    func MutualInductanceTo(_ otherDisk:PCH_DiskSection) -> Double
     {
         /// If the inner radii of the two sections differ by less than 1mm, we assume that they are in the same radial position
         let isSameRadialPosition = fabs(Double(self.diskRect.origin.x - otherDisk.diskRect.origin.x)) <= 0.001
@@ -468,21 +468,21 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
         let r3 = Double(otherDisk.diskRect.origin.x)
-        let r4 = r3 + Double(otherDisk.diskRect.size.width)
+        // let r4 = r3 + Double(otherDisk.diskRect.size.width)
         let rc = self.coreRadius
         
         var result:Double
         
         if (isSameRadialPosition)
         {
-            result = (π * µ0 * N1 * N2 / (6.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
+            result = (π * µ0 * N1 * N2 / (6.0 * WindowHtFactor * self.windHt)) * (gsl_pow_2(r2 + r1) + 2.0 * gsl_pow_2(r1))
         }
         else
         {
-            result = (π * µ0 * N1 * N2 / (3.0 * windHtFactor * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
+            result = (π * µ0 * N1 * N2 / (3.0 * WindowHtFactor * self.windHt)) * (gsl_pow_2(r1) + r1 * r2 + gsl_pow_2(r2))
         }
         
-        let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
+        let multiplier = π * µ0 * WindowHtFactor * self.windHt * N1 * N2 / ((N1 * I1) * (N2 * I2))
         
         // After testing, I've decided to go with the BlueBook recommendation to simply execute the summation 200 times insead of stopping after some informal definition of "convergence". [Subsequently changed to 300 times)
         
@@ -497,12 +497,12 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             
             let n = i + 1
             
-            let m = Double(n) * π / (windHtFactor * self.windHt)
+            let m = Double(n) * π / (WindowHtFactor * self.windHt)
             
             let x1 = m * r1;
             let x2 = m * r2;
             let x3 = m * r3
-            let x4 = m * r4
+            // let x4 = m * r4
             let xc = m * rc;
             
             if (isSameRadialPosition)
@@ -532,7 +532,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 newWay += exp(exponentCnDn) * (scaledFn * scaledCn)
                 
                 addQueue.sync {
-                    result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / gsl_pow_4(m)) * newWay
                 }
             }
             else
@@ -550,7 +550,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 // currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
                 
                 addQueue.sync {
-                    result += multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / gsl_pow_4(m)) * newWay
                 }
             }
         }

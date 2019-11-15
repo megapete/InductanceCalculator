@@ -393,10 +393,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         let multiplier = π * µ0 * windHtFactor * self.windHt * N1 * N1 / gsl_pow_2(N1 * I1)
         
-        let convergenceIterations = 300
-        
-        // Previously, this routine accessed the currVal array's elements (see commented-out code immediately below this comment) during the concurrentPerform call. Swift arrays are NOT thread-safe, which I only found out after updating the code to Swift 5. I subsequently decided to add a serial queue (addQueue) which directly accesses the 'result' variable.
-        // var currVal = [Double](repeating: 0.0, count: convergenceIterations)
+        let convergenceIterations = ConvergenceIterations
         
         let addQueue = DispatchQueue(label: "com.huberistech.selfinductance.addition")
         
@@ -408,12 +405,11 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             let n = i + 1
             
             let m = Double(n) * π / (windHtFactor * self.windHt)
+            let mPow4 = m * m * m * m
             
             let x1 = m * r1;
             let x2 = m * r2;
             let xc = m * rc;
-            
-            // After much mathematical manipulation and using scaled versions of the I and K functions, this is the most accurate method I came up with for calculating each iteration of the sum (the old method follows but is commented out). I have used a bunch of let statements for the different components of the equation to help debugging
             
             // The scaled version of Fn returns the remainder Rf where Fn = exp(2.0 * xc - x1) * Rf
             // let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
@@ -438,15 +434,10 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             newWay += exp(exponentCnDn) * (scaledFn * scaledCn)
             
             addQueue.sync {
-                result += multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
+                result += multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / mPow4) * newWay
             }
             
-            // Old (bad) way of saving the calculated value for thsi iteration
-            // currVal[i] = multiplier * (gsl_pow_2(self.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
         }
-        
-        // cool way to get the sum of the values in an array (no longer used)
-        // result += currVal.reduce(0.0, +)
         
         return result
     }
@@ -462,8 +453,6 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
         
         let N1 = self.N
         let N2 = otherDisk.N
-        
-        // let testI1 = self.J0() * Double(self.diskRect.size.width) * windHtFactor * self.windHt / self.N
         
         let r1 = Double(self.diskRect.origin.x)
         let r2 = r1 + Double(self.diskRect.size.width)
@@ -498,6 +487,7 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
             let n = i + 1
             
             let m = Double(n) * π / (WindowHtFactor * self.windHt)
+            let mPow4 = m * m * m * m
             
             let x1 = m * r1;
             let x2 = m * r2;
@@ -510,20 +500,15 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 // This uses the same "scaled" version of the iteration step as the SelfInductance() function above. See there for more comments.
                 
                 // The scaled version of Fn returns the remainder Rf where Fn = exp(2.0 * xc - x1) * Rf
-                // let scaledFn = self.ScaledF(n, windHtFactor:windHtFactor)
                 let scaledFn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledF[i]
                 
                 // the exponent after combining the two scaled remainders of Cn and Dn is (2.0 * xc - 2.0 * x1)
                 let exponentCnDn = 2.0 * (xc - x1)
                 
-                // This is ScaledCn
-                // let scaledTK1 = ScaledIntegralOf_tK1_from(x1, toB: x2)
                 let scaledCn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledC[i]
                 
-                // let (IntI1TermUnscaled, scaledI1) = PartialScaledIntegralOf_tL1_from(x1, toB: x2)
                 let (IntL1TermUnscaled, scaledI1) = PCH_DiskSection.coilRadialConstants[self.coilRef]!.PartialScaledIntL1[i]
                 
-                // let mult = PCH_DiskSection.coilRadialConstants[self.coilRef]!.E[i] - π / 2.0
                 let scaledEn = PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledE[i]
                 
                 // var newWay = mult * exp(x1) * scaledI1
@@ -532,25 +517,19 @@ class PCH_DiskSection:NSObject, NSCoding, NSCopying {
                 newWay += exp(exponentCnDn) * (scaledFn * scaledCn)
                 
                 addQueue.sync {
-                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / gsl_pow_4(m)) * newWay
+                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / mPow4) * newWay
                 }
             }
             else
             {
-                
-                
-                // let firstProduct = ScaledIntegralOf_tK1_from(x3, toB: x4) * ScaledIntegralOf_tI1_from(x1, toB: x2)
                 let firstProduct = PCH_DiskSection.coilRadialConstants[otherDisk.coilRef]!.ScaledC[i] * PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledIntI1[i]
                 
-                // let secondProduct = otherDisk.ScaledD(n, windHtFactor:windHtFactor) * ScaledIntegralOf_tK1_from(x1, toB: x2)
                 let secondProduct = PCH_DiskSection.coilRadialConstants[otherDisk.coilRef]!.ScaledD[i] * PCH_DiskSection.coilRadialConstants[self.coilRef]!.ScaledC[i]
                 
                 let newWay = exp(x1 - x3) * firstProduct + exp(2.0 * xc - x1 - x3) * secondProduct
 
-                // currVal[i] = multiplier * ((self.J(n, windHtFactor:windHtFactor) * otherDisk.J(n, windHtFactor:windHtFactor)) / gsl_pow_4(m)) * newWay
-                
                 addQueue.sync {
-                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / gsl_pow_4(m)) * newWay
+                    result += multiplier * ((self.J(n, windHtFactor:WindowHtFactor) * otherDisk.J(n, windHtFactor:WindowHtFactor)) / mPow4) * newWay
                 }
             }
         }

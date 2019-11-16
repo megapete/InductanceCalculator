@@ -37,9 +37,6 @@ class PCH_SectionData:NSObject, NSCoding {
         return result
     }
     
-    /// The shunt capacitances to other sections, in F. The keys are the PCH_Section's of the other sections.
-    // var shuntCaps = [PCH_DiskSection:Double]()
-    
     /// The resistance of the section, in Ω
     var resistance:Double = 0.0
     
